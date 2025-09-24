@@ -1,7 +1,72 @@
 package main
 
-import "fmt"
+import (
+	"context"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+	"workouts_bot/pkg/logger"
+	"workouts_bot/src/bot"
+	"workouts_bot/src/config"
+)
+
+// const botToken = "8462853732:AAEIa8fw9gfUiAkDWqScSi-BnWYMfErGgZg"
+
+func loggerConfig(config *config.Config) logger.Config {
+	return logger.Config{
+		Level:      config.Logger.Level,
+		Console:    config.Logger.Console,
+		FilePath:   config.Logger.FilePath,
+		MaxSize:    config.Logger.MaxSize,
+		MaxBackups: config.Logger.MaxBackups,
+		MaxAge:     config.Logger.MaxAge,
+		Compress:   config.Logger.Compress,
+	}
+}
 
 func main() {
-	fmt.Println("Hello, World!")
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal("Failed to load config:", err)
+	}
+
+	logger.Init(loggerConfig(cfg))
+	logger.Info("Starting workouts bot...")
+
+	bot, err := bot.New(cfg.BotToken)
+	if err != nil {
+		log.Fatal("Failed to create bot:", err)
+	}
+
+	botContext, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		if err := bot.Start(botContext); err != nil {
+			logger.Error("Bot error:", err)
+			cancel()
+		}
+	}()
+
+	signal := <-signalChan
+	logger.Info("Received signal:", signal.String())
+	logger.Info("Shutting down gracefully...")
+
+	cancel()
+
+	shutdownTimeout := 10 * time.Second
+	shoutdownContext, shotdownCancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer shotdownCancel()
+
+	select {
+	case <-shoutdownContext.Done():
+		logger.Warn("Shutdown timeout exceeded, forcing exit")
+	case <-time.After(5 * time.Second):
+		logger.Info("Shutdown completed")
+	}
 }
