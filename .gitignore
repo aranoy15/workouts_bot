@@ -1,4 +1,4 @@
 bin/
-*.sum
 logs/
 .env
+temp/
