@@ -18,9 +18,19 @@ type LoggerConfig struct {
 	Console    bool
 }
 
+type DatabaseConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	DBName   string
+	SSLMode  string
+}
+
 type Config struct {
 	BotToken string
 	Logger   LoggerConfig
+	Database DatabaseConfig
 }
 
 func Load() (*Config, error) {
@@ -38,6 +48,14 @@ func Load() (*Config, error) {
 			MaxAge:     getEnvInt("LOG_MAX_AGE", 30),
 			Compress:   getEnvBool("LOG_COMPRESS", true),
 			Console:    getEnvBool("LOG_CONSOLE", true),
+		},
+		Database: DatabaseConfig{
+			Host:     getEnv("DB_HOST", "localhost"),
+			Port:     getEnvInt("DB_PORT", 5432),
+			User:     getEnv("DB_USER", "postgres"),
+			Password: getEnv("DB_PASSWORD", "postgres"),
+			DBName:   getEnv("DB_NAME", "postgres"),
+			SSLMode:  getEnv("DB_SSL_MODE", "disable"),
 		},
 	}
 

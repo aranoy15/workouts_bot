@@ -10,6 +10,7 @@ import (
 	"workouts_bot/pkg/logger"
 	"workouts_bot/src/bot"
 	"workouts_bot/src/config"
+	"workouts_bot/src/database"
 )
 
 // const botToken = "8462853732:AAEIa8fw9gfUiAkDWqScSi-BnWYMfErGgZg"
@@ -34,6 +35,14 @@ func main() {
 
 	logger.Init(loggerConfig(cfg))
 	logger.Info("Starting workouts bot...")
+
+	db, err := database.Connect(cfg.Database)
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+	if err := database.Migrate(db); err != nil {
+		log.Fatal("Failed to migrate database:", err)
+	}
 
 	bot, err := bot.New(cfg.BotToken)
 	if err != nil {

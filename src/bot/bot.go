@@ -2,14 +2,17 @@ package bot
 
 import (
 	"context"
+	"strings"
 	"workouts_bot/pkg/logger"
 	"workouts_bot/src/bot/handlers"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/sirupsen/logrus"
 )
 
 const (
-	StartCommand = "/start"
+	startCommand         = "start"
+	createWorkoutCommand = "create_workout"
 )
 
 type Bot struct {
@@ -34,7 +37,8 @@ func New(botToken string) (*Bot, error) {
 	return &Bot{
 		api: bot,
 		handlers: map[string]handlers.Handler{
-			StartCommand: handlers.NewStartHandler(bot),
+			startCommand:         handlers.NewStartHandler(bot),
+			createWorkoutCommand: handlers.NewCreateWorkoutHandler(bot),
 		},
 	}, nil
 }
@@ -60,26 +64,44 @@ func (bot *Bot) Start(botContext context.Context) error {
 func (bot *Bot) handleUpdate(update tgbotapi.Update) {
 	if update.Message != nil {
 		bot.handleMessage(update)
+	} else if update.CallbackQuery != nil {
+		bot.handleCallbackQuery(update)
 	}
 }
 
 func (bot *Bot) handleMessage(update tgbotapi.Update) {
 	message := update.Message
 
-	switch message.Text {
-	case StartCommand:
-		bot.handlers[StartCommand].Handle(update)
+	logger.WithFields(logrus.Fields{
+		"user_id": message.From.ID,
+		"chat_id": message.Chat.ID,
+		"message": message.Text,
+	}).Info("Message:")
+
+	command := strings.Replace(message.Text, "/", "", 1)
+
+	switch command {
+	case startCommand:
+		bot.handlers[startCommand].Handle(update)
 	default:
 	}
+}
 
-	/*
-		logger.WithFields(logrus.Fields{
-			"user_id":  message.From.ID,
-			"username": message.From.UserName,
-			"text":     message.Text,
-		}).Info("Received message")
+func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
+	callbackQuery := update.CallbackQuery
 
-		answer := tgbotapi.NewMessage(message.Chat.ID, message.Text)
-		bot.api.Send(answer)
-	*/
+	logger.WithFields(logrus.Fields{
+		"user_id": callbackQuery.From.ID,
+		"chat_id": callbackQuery.Message.Chat.ID,
+		"data":    callbackQuery.Data,
+	}).Info("Callback query:")
+
+	command := callbackQuery.Data
+
+	switch command {
+	case createWorkoutCommand:
+		bot.handlers[createWorkoutCommand].Handle(update)
+	default:
+		logger.Warn("Unknown callback query:", callbackQuery.Data)
+	}
 }

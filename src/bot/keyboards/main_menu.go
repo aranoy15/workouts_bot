@@ -2,8 +2,19 @@ package keyboards
 
 import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-func CreateMainMenu() tgbotapi.ReplyKeyboardMarkup {
-	keyboard := tgbotapi.NewReplyKeyboard(
+func CreateMainMenu() tgbotapi.InlineKeyboardMarkup {
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🏋️ Создать тренировку", "create_workout"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("📊 Мои тренировки", "my_workouts"),
+			tgbotapi.NewInlineKeyboardButtonData("💪 Упражнения", "exercises"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("⚙️ Настройки", "settings"),
+		),
+	/*
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton("🏋️ Создать тренировку"),
 		),
@@ -14,10 +25,8 @@ func CreateMainMenu() tgbotapi.ReplyKeyboardMarkup {
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton("⚙️ Настройки"),
 		),
+	*/
 	)
-
-	keyboard.ResizeKeyboard = true
-	keyboard.OneTimeKeyboard = true
 
 	return keyboard
 }

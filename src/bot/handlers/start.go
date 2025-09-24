@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	HelloMessage = "Привет! Я бот для тренировок 🏋️\n\n" +
+	helloMessage = "Привет! Я бот для тренировок 🏋️\n\n" +
 		"Я помогу тебе:\n" +
 		"• Подобрать упражнения\n" +
 		"• Составить программу тренировок\n" +
@@ -15,10 +15,6 @@ const (
 		"• Записывать подходы и веса\n\n" +
 		"Выбери действие:"
 )
-
-type Handler interface {
-	Handle(update tgbotapi.Update)
-}
 
 type StartHandler struct {
 	bot *tgbotapi.BotAPI
@@ -33,7 +29,9 @@ func NewStartHandler(bot *tgbotapi.BotAPI) *StartHandler {
 func (startHandler *StartHandler) Handle(update tgbotapi.Update) {
 	keyboard := keyboards.CreateMainMenu()
 
-	message := tgbotapi.NewMessage(update.Message.Chat.ID, HelloMessage)
+	chatId := GetChatId(update)
+
+	message := tgbotapi.NewMessage(chatId, helloMessage)
 	message.ReplyMarkup = &keyboard
 	startHandler.bot.Send(message)
 }
