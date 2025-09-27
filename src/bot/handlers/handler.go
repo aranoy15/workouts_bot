@@ -3,7 +3,7 @@ package handlers
 import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 type Handler interface {
-	Handle(update tgbotapi.Update)
+	Handle(update tgbotapi.Update) error
 }
 
 func GetChatId(update tgbotapi.Update) int64 {
