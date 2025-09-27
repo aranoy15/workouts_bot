@@ -2,30 +2,25 @@ package keyboards
 
 import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-func CreateMainMenu() tgbotapi.InlineKeyboardMarkup {
-	keyboard := tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🏋️ Создать тренировку", "create_workout"),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("📊 Мои тренировки", "my_workouts"),
-			tgbotapi.NewInlineKeyboardButtonData("💪 Упражнения", "exercises"),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("⚙️ Настройки", "settings"),
-		),
-	/*
+const (
+	CreateWorkoutMessage = "🏋️ Создать тренировку"
+	MyWorkoutsMessage    = "📊 Мои тренировки"
+	ExercisesMessage     = "💪 Упражнения"
+	SettingsMessage      = "⚙️ Настройки"
+)
+
+func CreateMainMenu() tgbotapi.ReplyKeyboardMarkup {
+	keyboard := tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("🏋️ Создать тренировку"),
+			tgbotapi.NewKeyboardButton(CreateWorkoutMessage),
 		),
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("📊 Мои тренировки"),
-			tgbotapi.NewKeyboardButton("💪 Упражнения"),
+			tgbotapi.NewKeyboardButton(MyWorkoutsMessage),
+			tgbotapi.NewKeyboardButton(ExercisesMessage),
 		),
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("⚙️ Настройки"),
+			tgbotapi.NewKeyboardButton(SettingsMessage),
 		),
-	*/
 	)
 
 	return keyboard

@@ -44,7 +44,7 @@ func main() {
 		log.Fatal("Failed to migrate database:", err)
 	}
 
-	bot, err := bot.New(cfg.BotToken)
+	bot, err := bot.New(cfg.BotToken, db)
 	if err != nil {
 		log.Fatal("Failed to create bot:", err)
 	}

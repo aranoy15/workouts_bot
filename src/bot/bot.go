@@ -2,31 +2,21 @@ package bot
 
 import (
 	"context"
-	"strings"
 	"workouts_bot/pkg/logger"
 	"workouts_bot/src/bot/handlers"
+	"workouts_bot/src/bot/keyboards"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	startCommand         = "start"
-	createWorkoutCommand = "create_workout"
+	"gorm.io/gorm"
 )
 
 type Bot struct {
 	api      *tgbotapi.BotAPI
 	handlers map[string]handlers.Handler
-
-	//TODO: implement db integration
-
-	//TODO: implement all services
-
-	// handlers
 }
 
-func New(botToken string) (*Bot, error) {
+func New(botToken string, database *gorm.DB) (*Bot, error) {
 	bot, err := tgbotapi.NewBotAPI(botToken)
 	if err != nil {
 		logger.Error("Failed to create bot API:", err)
@@ -37,8 +27,8 @@ func New(botToken string) (*Bot, error) {
 	return &Bot{
 		api: bot,
 		handlers: map[string]handlers.Handler{
-			startCommand:         handlers.NewStartHandler(bot),
-			createWorkoutCommand: handlers.NewCreateWorkoutHandler(bot),
+			handlers.StartCommand:          handlers.NewStartHandler(bot, database),
+			keyboards.CreateWorkoutMessage: handlers.NewCreateWorkoutHandler(bot),
 		},
 	}, nil
 }
@@ -78,12 +68,22 @@ func (bot *Bot) handleMessage(update tgbotapi.Update) {
 		"message": message.Text,
 	}).Info("Message:")
 
-	command := strings.Replace(message.Text, "/", "", 1)
-
-	switch command {
-	case startCommand:
-		bot.handlers[startCommand].Handle(update)
+	var err error
+	switch message.Text {
+	case handlers.StartCommand:
+		err = bot.handlers[handlers.StartCommand].Handle(update)
+	case keyboards.CreateWorkoutMessage:
+		err = bot.handlers[keyboards.CreateWorkoutMessage].Handle(update)
 	default:
+	}
+
+	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"user_id": message.From.ID,
+			"chat_id": message.Chat.ID,
+			"message": message.Text,
+			"error":   err,
+		}).Error("Failed to handle message")
 	}
 }
 
@@ -96,12 +96,4 @@ func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 		"data":    callbackQuery.Data,
 	}).Info("Callback query:")
 
-	command := callbackQuery.Data
-
-	switch command {
-	case createWorkoutCommand:
-		bot.handlers[createWorkoutCommand].Handle(update)
-	default:
-		logger.Warn("Unknown callback query:", callbackQuery.Data)
-	}
 }
