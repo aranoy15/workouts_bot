@@ -16,10 +16,14 @@ func NewUserService(database *gorm.DB) *UserService {
 	return &UserService{database: database}
 }
 
-func (userService *UserService) GetByTelegramID(telegramID int64) (*models.User, error) {
+func (userService *UserService) GetByTelegramID(
+	telegramID int64,
+) (*models.User, error) {
 	var user models.User
 
-	err := userService.database.Where("telegram_id = ?", telegramID).First(&user).Error
+	err := userService.database.
+		Where("telegram_id = ?", telegramID).
+		First(&user).Error
 	if err != nil {
 		logger.WithFields(logrus.Fields{
 			"telegram_id": telegramID,
@@ -28,13 +32,20 @@ func (userService *UserService) GetByTelegramID(telegramID int64) (*models.User,
 		return nil, err
 	}
 
+	logger.WithFields(logrus.Fields{
+		"user_id":     user.ID,
+		"telegram_id": user.TelegramID,
+	}).Info("User fetched successfully")
+
 	return &user, nil
 }
 
 func (userService *UserService) CreateOrUpdate(user *models.User) error {
 	var existingUser models.User
 
-	result := userService.database.Where("telegram_id = ?", user.TelegramID).First(&existingUser)
+	result := userService.database.
+		Where("telegram_id = ?", user.TelegramID).
+		First(&existingUser)
 	if result.Error == gorm.ErrRecordNotFound {
 		err := userService.database.Create(user).Error
 		if err != nil {
@@ -72,9 +83,13 @@ func (userService *UserService) CreateOrUpdate(user *models.User) error {
 	return nil
 }
 
-func (userService *UserService) UpdateEquipment(userID uint, equipmentIDs []int) error {
+func (userService *UserService) UpdateEquipment(
+	userID uint,
+	equipmentIDs []int,
+) error {
 	err := userService.database.Model(&models.User{}).
-		Where("id = ?", userID).Update("equipment_ids", equipmentIDs).
+		Where("id = ?", userID).
+		Update("equipment_ids", equipmentIDs).
 		Error
 
 	if err != nil {

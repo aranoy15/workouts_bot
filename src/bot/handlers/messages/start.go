@@ -1,7 +1,9 @@
-package handlers
+package messages
 
 import (
+	"time"
 	"workouts_bot/pkg/logger"
+	"workouts_bot/src/bot/handlers"
 	"workouts_bot/src/bot/keyboards"
 	"workouts_bot/src/database/models"
 	"workouts_bot/src/services"
@@ -30,14 +32,20 @@ type StartHandler struct {
 	userService *services.UserService
 }
 
-func NewStartHandler(bot *tgbotapi.BotAPI, database *gorm.DB) *StartHandler {
+func NewStartHandler(
+	bot *tgbotapi.BotAPI,
+	database *gorm.DB,
+) *StartHandler {
 	return &StartHandler{
 		bot:         bot,
 		userService: services.NewUserService(database),
 	}
 }
 
-func (startHandler *StartHandler) Handle(update tgbotapi.Update) error {
+func (startHandler *StartHandler) Handle(
+	update tgbotapi.Update,
+) error {
+	chatID := update.Message.Chat.ID
 	userID := update.Message.From.ID
 	userName := update.Message.From.UserName
 	firstName := update.Message.From.FirstName
@@ -48,26 +56,34 @@ func (startHandler *StartHandler) Handle(update tgbotapi.Update) error {
 		"first_name": firstName,
 	}).Info("New user started bot")
 
-	user := &models.User{
-		TelegramID: userID,
-		Username:   userName,
-		FirstName:  firstName,
-		Goals:      models.GoalsSlice{models.GoalMuscleGain},
-		Experience: 1,
+	user, err := startHandler.userService.GetByTelegramID(userID)
+	if err != nil {
+		logger.Info("User not found, creating new user:", chatID)
+		user = &models.User{
+			TelegramID:   userID,
+			Username:     userName,
+			FirstName:    firstName,
+			Goals:        models.GoalsSlice{models.GoalMuscleGain},
+			Experience:   1,
+			Limitations:  []string{},
+			EquipmentIDs: []int{1, 2, 3},
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		}
 	}
 
 	if err := startHandler.userService.CreateOrUpdate(user); err != nil {
 		logger.Error("Failed to create or update user:", err)
+		handlers.SendErrorMessage(
+			startHandler.bot, chatID,
+			"Ошибка при получении пользователя",
+		)
 		return err
 	}
 
-	keyboard := keyboards.CreateMainMenu()
+	msg := tgbotapi.NewMessage(chatID, helloMessage)
+	msg.ReplyMarkup = keyboards.CreateMainMenu()
 
-	chatId := GetChatId(update)
-
-	message := tgbotapi.NewMessage(chatId, helloMessage)
-	message.ReplyMarkup = &keyboard
-
-	_, err := startHandler.bot.Send(message)
+	_, err = startHandler.bot.Send(msg)
 	return err
 }

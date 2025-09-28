@@ -13,8 +13,6 @@ import (
 	"workouts_bot/src/database"
 )
 
-// const botToken = "8462853732:AAEIa8fw9gfUiAkDWqScSi-BnWYMfErGgZg"
-
 func loggerConfig(config *config.Config) logger.Config {
 	return logger.Config{
 		Level:      config.Logger.Level,
@@ -69,11 +67,14 @@ func main() {
 	cancel()
 
 	shutdownTimeout := 10 * time.Second
-	shoutdownContext, shotdownCancel := context.WithTimeout(context.Background(), shutdownTimeout)
-	defer shotdownCancel()
+	shutdownContext, shutdownCancel := context.WithTimeout(
+		context.Background(),
+		shutdownTimeout,
+	)
+	defer shutdownCancel()
 
 	select {
-	case <-shoutdownContext.Done():
+	case <-shutdownContext.Done():
 		logger.Warn("Shutdown timeout exceeded, forcing exit")
 	case <-time.After(5 * time.Second):
 		logger.Info("Shutdown completed")
