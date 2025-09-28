@@ -34,6 +34,9 @@ jobs:
       with:
         go-version: '1.22'
 
+    - name: Clean Go module cache
+      run: go clean -modcache
+
     - name: Cache Go modules
       uses: actions/cache@v4
       with:
@@ -41,12 +44,17 @@ jobs:
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
+      id: cache-go-modules
 
     - name: Install dependencies
-      run: go clean -modcache && go mod download
-
-    - name: Verify dependencies
-      run: go mod verify
+      run: |
+        if [ "${{ steps.cache-go-modules.outputs.cache-hit }}" != "true" ]; then
+          echo "Cache miss - downloading modules..."
+          go mod download
+        else
+          echo "Cache hit - verifying modules..."
+          go mod verify
+        fi
 
     - name: Format check
       run: |
@@ -77,6 +85,9 @@ jobs:
       with:
         go-version: '1.22'
 
+    - name: Clean Go module cache
+      run: go clean -modcache
+
     - name: Cache Go modules
       uses: actions/cache@v4
       with:
@@ -84,9 +95,17 @@ jobs:
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
+      id: cache-go-modules-build
 
     - name: Install dependencies
-      run: go clean -modcache && go mod download
+      run: |
+        if [ "${{ steps.cache-go-modules-build.outputs.cache-hit }}" != "true" ]; then
+          echo "Cache miss - downloading modules..."
+          go mod download
+        else
+          echo "Cache hit - verifying modules..."
+          go mod verify
+        fi
 
     - name: Build
       run: |
@@ -112,6 +131,22 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.22'
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Cache golangci-lint
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/golangci-lint
+        key: ${{ runner.os }}-golangci-lint-${{ hashFiles('**/.golangci.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-golangci-lint-
 
     - name: golangci-lint
       uses: golangci/golangci-lint-action@v6
