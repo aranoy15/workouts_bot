@@ -37,15 +37,13 @@ jobs:
     - name: Cache Go modules
       uses: actions/cache@v4
       with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
+        path: ~/go/pkg/mod
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
 
     - name: Install dependencies
-      run: go mod download
+      run: go clean -modcache && go mod download
 
     - name: Verify dependencies
       run: go mod verify
@@ -82,15 +80,13 @@ jobs:
     - name: Cache Go modules
       uses: actions/cache@v4
       with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
+        path: ~/go/pkg/mod
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
 
     - name: Install dependencies
-      run: go mod download
+      run: go clean -modcache && go mod download
 
     - name: Build
       run: |
