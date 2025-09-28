@@ -34,7 +34,7 @@ func main() {
 	logger.Init(loggerConfig(cfg))
 	logger.Info("Starting workouts bot...")
 
-	db, err := database.Connect(cfg.Database)
+	db, err := database.Connect(&cfg.Database)
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}

@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func Connect(cfg config.DatabaseConfig) (*gorm.DB, error) {
+func Connect(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 	var db *gorm.DB
 	var err error
 

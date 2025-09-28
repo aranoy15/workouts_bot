@@ -69,7 +69,8 @@ func (handler *MyWorkoutsHandler) Handle(update tgbotapi.Update) error {
 
 	message := "📊 Ваши тренировки:\n\n"
 
-	for index, workout := range workouts {
+	for index := range workouts {
+		workout := &workouts[index]
 		status := getWorkoutStatusEmoji(workout.Status)
 		message += fmt.Sprintf("%d. %s %s\n", index+1, status, workout.Name)
 

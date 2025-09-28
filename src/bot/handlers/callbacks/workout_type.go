@@ -1,6 +1,7 @@
 package callbacks
 
 import (
+	"fmt"
 	"strings"
 	"workouts_bot/pkg/logger"
 	"workouts_bot/src/bot/handlers"
@@ -86,32 +87,44 @@ func (h *WorkoutTypeHandler) Handle(update tgbotapi.Update) error {
 	}
 }
 
-func (h *WorkoutTypeHandler) createSplitWorkout(
+func (h *WorkoutTypeHandler) createWorkoutWithDuration(
 	userID int64,
 	chatID int64,
 	messageID int,
+	workoutType string,
+	title string,
+	emoji string,
 ) error {
 	logger.WithFields(logrus.Fields{
-		"user_id": userID,
-		"chat_id": chatID,
-	}).Info("Creating split workout")
+		"user_id":      userID,
+		"chat_id":      chatID,
+		"workout_type": workoutType,
+	}).Info("Creating workout")
 
-	text := "🏋️ Классический сплит\n\n" +
-		"Выберите продолжительность тренировки:"
+	text := fmt.Sprintf("%s %s\n\nВыберите продолжительность тренировки:", emoji, title)
 
 	editMsg := tgbotapi.NewEditMessageText(chatID, messageID, text)
-	keyboard := keyboards.CreateWorkoutDurationKeyboard("split")
+	keyboard := keyboards.CreateWorkoutDurationKeyboard(workoutType)
 	editMsg.ReplyMarkup = &keyboard
 
 	_, err := h.bot.Send(editMsg)
 	if err != nil {
 		logger.WithFields(logrus.Fields{
-			"user_id": userID,
-			"chat_id": chatID,
-			"error":   err,
-		}).Error("Failed to send split workout duration selection")
+			"user_id":      userID,
+			"chat_id":      chatID,
+			"workout_type": workoutType,
+			"error":        err,
+		}).Error("Failed to send workout duration selection")
 	}
 	return err
+}
+
+func (h *WorkoutTypeHandler) createSplitWorkout(
+	userID int64,
+	chatID int64,
+	messageID int,
+) error {
+	return h.createWorkoutWithDuration(userID, chatID, messageID, "split", "Классический сплит", "🏋️")
 }
 
 func (h *WorkoutTypeHandler) createPushPullWorkout(
@@ -119,27 +132,7 @@ func (h *WorkoutTypeHandler) createPushPullWorkout(
 	chatID int64,
 	messageID int,
 ) error {
-	logger.WithFields(logrus.Fields{
-		"user_id": userID,
-		"chat_id": chatID,
-	}).Info("Creating push/pull workout")
-
-	text := "🔄 Push/Pull/Legs\n\n" +
-		"Выберите продолжительность тренировки:"
-
-	editMsg := tgbotapi.NewEditMessageText(chatID, messageID, text)
-	keyboard := keyboards.CreateWorkoutDurationKeyboard("push_pull")
-	editMsg.ReplyMarkup = &keyboard
-
-	_, err := h.bot.Send(editMsg)
-	if err != nil {
-		logger.WithFields(logrus.Fields{
-			"user_id": userID,
-			"chat_id": chatID,
-			"error":   err,
-		}).Error("Failed to send push/pull workout duration selection")
-	}
-	return err
+	return h.createWorkoutWithDuration(userID, chatID, messageID, "push_pull", "Push/Pull/Legs", "🔄")
 }
 
 func (h *WorkoutTypeHandler) createFullBodyWorkout(

@@ -138,7 +138,7 @@ func (h *ExerciseHandler) showDetails(
 func (h *ExerciseHandler) showVideo(
 	userID int64,
 	chatID int64,
-	messageID int,
+	_ int,
 	exerciseID uint,
 ) error {
 	logger.WithFields(logrus.Fields{

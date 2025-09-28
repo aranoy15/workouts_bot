@@ -70,7 +70,8 @@ func (handler *ExercisesHandler) Handle(update tgbotapi.Update) error {
 	}
 
 	categories := make(map[string][]string)
-	for _, exercise := range exercises {
+	for index := range exercises {
+		exercise := &exercises[index]
 		categories[exercise.Category] = append(
 			categories[exercise.Category],
 			exercise.Name,
