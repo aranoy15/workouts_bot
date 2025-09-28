@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -47,7 +48,7 @@ func (goalSlice *GoalsSlice) Scan(value interface{}) error {
 }
 
 type User struct {
-	ID           uint       `gorm:"primaryKey" json:"id"`
+	ID           uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	TelegramID   int64      `gorm:"uniqueIndex;not null" json:"telegram_id"`
 	Username     string     `json:"username"`
 	FirstName    string     `json:"first_name"`

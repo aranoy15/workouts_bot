@@ -46,6 +46,7 @@ func Connect(cfg config.DatabaseConfig) (*gorm.DB, error) {
 func Migrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&models.User{},
+		&models.WorkoutType{},
 		&models.Exercise{},
 		&models.Equipment{},
 		&models.Workout{},

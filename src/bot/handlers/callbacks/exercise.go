@@ -196,7 +196,19 @@ func (h *ExerciseHandler) addToWorkout(
 		"exercise_id": exerciseID,
 	}).Info("Adding exercise to workout")
 
-	workouts, err := h.workoutsService.GetUserWorkouts(userID)
+	user, err := h.userService.GetByTelegramID(userID)
+	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"user_id":     userID,
+			"chat_id":     chatID,
+			"exercise_id": exerciseID,
+			"error":       err,
+		}).Error("Failed to get user by telegram ID")
+		handlers.SendErrorMessage(h.bot, chatID, "Ошибка при получении пользователя")
+		return nil
+	}
+
+	workouts, err := h.workoutsService.GetUserWorkouts(user.ID)
 	if err != nil {
 		logger.WithFields(logrus.Fields{
 			"user_id":     userID,

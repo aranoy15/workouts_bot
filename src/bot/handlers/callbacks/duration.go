@@ -1,6 +1,7 @@
 package callbacks
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"workouts_bot/pkg/logger"
@@ -46,7 +47,7 @@ func (h *DurationHandler) Handle(update tgbotapi.Update) error {
 		"data":       data,
 	}).Info("Duration callback received")
 
-	if len(parts) < 2 {
+	if len(parts) < 3 {
 		logger.WithFields(logrus.Fields{
 			"user_id": userID,
 			"chat_id": chatID,
@@ -56,7 +57,8 @@ func (h *DurationHandler) Handle(update tgbotapi.Update) error {
 		return nil
 	}
 
-	durationStr := parts[1]
+	workoutType := parts[1]
+	durationStr := parts[2]
 
 	duration, err := strconv.Atoi(durationStr)
 	if err != nil {
@@ -71,22 +73,73 @@ func (h *DurationHandler) Handle(update tgbotapi.Update) error {
 	}
 
 	logger.WithFields(logrus.Fields{
-		"user_id":  userID,
-		"chat_id":  chatID,
-		"duration": duration,
+		"user_id":      userID,
+		"chat_id":      chatID,
+		"workout_type": workoutType,
+		"duration":     duration,
 	}).Info("Processing duration selection")
 
 	logger.WithFields(logrus.Fields{
-		"user_id":  userID,
-		"chat_id":  chatID,
-		"duration": duration,
+		"user_id":      userID,
+		"chat_id":      chatID,
+		"workout_type": workoutType,
+		"duration":     duration,
 	}).Info("Creating workout with selected duration")
 
-	// TODO: Implement actual workout creation logic
-	// For now, just send a confirmation message
-	text := "✅ Тренировка создана!\n\n" +
-		"Продолжительность: " + durationStr + " минут\n\n" +
-		"Тренировка добавлена в ваш список."
+	user, err := h.userService.GetByTelegramID(userID)
+	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"user_id": userID,
+			"chat_id": chatID,
+			"error":   err,
+		}).Error("Failed to get user by telegram ID")
+		handlers.SendErrorMessage(h.bot, chatID, "Ошибка при получении пользователя")
+		return nil
+	}
+
+	var workoutName string
+	switch workoutType {
+	case "split":
+		workoutName = "Классический сплит"
+	case "push_pull":
+		workoutName = "Push/Pull/Legs"
+	case "fullbody":
+		workoutName = "Фулбади"
+	case "custom":
+		workoutName = "Кастомная тренировка"
+	default:
+		workoutName = "Новая тренировка"
+	}
+
+	workout, err := h.workoutsService.CreateWorkout(user.ID, workoutName, workoutType)
+	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"user_id":      userID,
+			"chat_id":      chatID,
+			"duration":     duration,
+			"workout_type": workoutType,
+			"error":        err,
+		}).Error("Failed to create workout")
+		handlers.SendErrorMessage(h.bot, chatID, "Ошибка создания тренировки")
+		return nil
+	}
+
+	err = h.workoutsService.Database.Model(workout).Update("duration_minutes", duration).Error
+	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"user_id":    userID,
+			"chat_id":    chatID,
+			"workout_id": workout.ID,
+			"duration":   duration,
+			"error":      err,
+		}).Error("Failed to update workout duration")
+	}
+
+	text := fmt.Sprintf("✅ Тренировка создана!\n\n"+
+		"Тип: %s\n"+
+		"Продолжительность: %s минут\n\n"+
+		"Тренировка добавлена в ваш список.",
+		workoutName, durationStr)
 
 	editMsg := tgbotapi.NewEditMessageText(chatID, messageID, text)
 

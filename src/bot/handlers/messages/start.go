@@ -60,15 +60,13 @@ func (startHandler *StartHandler) Handle(
 	if err != nil {
 		logger.Info("User not found, creating new user:", chatID)
 		user = &models.User{
-			TelegramID:   userID,
-			Username:     userName,
-			FirstName:    firstName,
-			Goals:        models.GoalsSlice{models.GoalMuscleGain},
-			Experience:   1,
-			Limitations:  []string{},
-			EquipmentIDs: []int{1, 2, 3},
-			CreatedAt:    time.Now(),
-			UpdatedAt:    time.Now(),
+			TelegramID: userID,
+			Username:   userName,
+			FirstName:  firstName,
+			Goals:      models.GoalsSlice{models.GoalMuscleGain},
+			Experience: 1,
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
 		}
 	}
 

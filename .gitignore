@@ -4,3 +4,33 @@ logs/
 temp/
 *.db
 .vscode/
+
+# Coverage files
+coverage.out
+*.cover
+
+# IDE files
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test files
+*.test
+*.prof
+
+# Docker files
+.env
+.env.local
+.env.production
+docker-compose.override.yml

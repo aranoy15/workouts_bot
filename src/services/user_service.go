@@ -1,9 +1,11 @@
 package services
 
 import (
+	"time"
 	"workouts_bot/pkg/logger"
 	"workouts_bot/src/database/models"
 
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -67,6 +69,7 @@ func (userService *UserService) CreateOrUpdate(user *models.User) error {
 	}
 
 	user.ID = existingUser.ID
+	user.UpdatedAt = time.Now()
 	err := userService.database.Save(user).Error
 	if err != nil {
 		logger.WithFields(logrus.Fields{
@@ -84,7 +87,7 @@ func (userService *UserService) CreateOrUpdate(user *models.User) error {
 }
 
 func (userService *UserService) UpdateEquipment(
-	userID uint,
+	userID uuid.UUID,
 	equipmentIDs []int,
 ) error {
 	err := userService.database.Model(&models.User{}).
@@ -109,7 +112,10 @@ func (userService *UserService) UpdateEquipment(
 	return nil
 }
 
-func (userService *UserService) UpdateGoals(userID uint, goals []string) error {
+func (userService *UserService) UpdateGoals(
+	userID uuid.UUID,
+	goals []string,
+) error {
 	err := userService.database.Model(&models.User{}).
 		Where("id = ?", userID).Update("goals", goals).
 		Error

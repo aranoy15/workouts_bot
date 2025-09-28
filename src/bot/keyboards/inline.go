@@ -342,26 +342,26 @@ func CreateMuscleGroupKeyboard() tgbotapi.InlineKeyboardMarkup {
 	return keyboard
 }
 
-func CreateWorkoutDurationKeyboard() tgbotapi.InlineKeyboardMarkup {
+func CreateWorkoutDurationKeyboard(workoutType string) tgbotapi.InlineKeyboardMarkup {
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(
 				Duration30,
-				"duration:30",
+				fmt.Sprintf("duration:%s:30", workoutType),
 			),
 			tgbotapi.NewInlineKeyboardButtonData(
 				Duration45,
-				"duration:45",
+				fmt.Sprintf("duration:%s:45", workoutType),
 			),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(
 				Duration60,
-				"duration:60",
+				fmt.Sprintf("duration:%s:60", workoutType),
 			),
 			tgbotapi.NewInlineKeyboardButtonData(
 				Duration90,
-				"duration:90",
+				fmt.Sprintf("duration:%s:90", workoutType),
 			),
 		),
 		tgbotapi.NewInlineKeyboardRow(

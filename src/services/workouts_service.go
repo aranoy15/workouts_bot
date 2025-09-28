@@ -4,20 +4,21 @@ import (
 	"workouts_bot/pkg/logger"
 	"workouts_bot/src/database/models"
 
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
 type WorkoutsService struct {
-	database *gorm.DB
+	Database *gorm.DB
 }
 
 func NewWorkoutsService(database *gorm.DB) *WorkoutsService {
-	return &WorkoutsService{database: database}
+	return &WorkoutsService{Database: database}
 }
 
 func (workoutsService *WorkoutsService) CreateWorkout(
-	userID uint,
+	userID uuid.UUID,
 	name string,
 	workoutType string,
 ) (*models.Workout, error) {
@@ -28,7 +29,7 @@ func (workoutsService *WorkoutsService) CreateWorkout(
 		WorkoutType: workoutType,
 	}
 
-	err := workoutsService.database.Create(&workout).Error
+	err := workoutsService.Database.Create(&workout).Error
 	if err != nil {
 		logger.WithFields(logrus.Fields{
 			"user_id":      userID,
@@ -47,11 +48,11 @@ func (workoutsService *WorkoutsService) CreateWorkout(
 }
 
 func (workoutsService *WorkoutsService) GetUserWorkouts(
-	userID int64,
+	userID uuid.UUID,
 ) ([]models.Workout, error) {
 	var workouts []models.Workout
 
-	err := workoutsService.database.
+	err := workoutsService.Database.
 		Where("user_id = ?", userID).
 		Order("created_at DESC").
 		Find(&workouts).
@@ -73,7 +74,7 @@ func (workoutsService *WorkoutsService) GetWorkoutByID(
 ) (*models.Workout, error) {
 	var workout models.Workout
 
-	err := workoutsService.database.
+	err := workoutsService.Database.
 		Preload("Exercises.Exercise").
 		Preload("Exercises.Sets").
 		First(&workout, workoutID).
@@ -91,7 +92,7 @@ func (workoutsService *WorkoutsService) GetWorkoutByID(
 }
 
 func (workoutsService *WorkoutsService) StartWorkout(workoutID uint64) error {
-	err := workoutsService.database.
+	err := workoutsService.Database.
 		Model(&models.Workout{}).
 		Where("id = ?", workoutID).
 		Update("status", "in_progress").
@@ -113,7 +114,7 @@ func (workoutsService *WorkoutsService) StartWorkout(workoutID uint64) error {
 }
 
 func (workoutsService *WorkoutsService) CompleteWorkout(workoutID uint64) error {
-	err := workoutsService.database.
+	err := workoutsService.Database.
 		Model(&models.Workout{}).
 		Where("id = ?", workoutID).
 		Updates(map[string]interface{}{
@@ -156,7 +157,7 @@ func (workoutsService *WorkoutsService) AddExerciseToWorkout(
 		WeightKg:    weightKg,
 	}
 
-	err := workoutsService.database.Create(&workoutExercise).Error
+	err := workoutsService.Database.Create(&workoutExercise).Error
 	if err != nil {
 		logger.WithFields(logrus.Fields{
 			"workout_id":  workoutID,
@@ -177,7 +178,7 @@ func (workoutsService *WorkoutsService) AddExerciseToWorkout(
 }
 
 func (workoutsService *WorkoutsService) DeleteWorkout(workoutID uint) error {
-	err := workoutsService.database.
+	err := workoutsService.Database.
 		Where("id = ?", workoutID).
 		Delete(&models.Workout{}).
 		Error

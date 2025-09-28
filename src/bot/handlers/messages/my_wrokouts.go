@@ -38,7 +38,8 @@ func (handler *MyWorkoutsHandler) Handle(update tgbotapi.Update) error {
 		"user_id": userID,
 	}).Info("My workouts handler")
 
-	if _, err := handler.userService.GetByTelegramID(userID); err != nil {
+	user, err := handler.userService.GetByTelegramID(userID)
+	if err != nil {
 		logger.Error("Failed to get user by telegram ID: ", err)
 		handlers.SendErrorMessage(
 			handler.bot, chatID,
@@ -47,7 +48,7 @@ func (handler *MyWorkoutsHandler) Handle(update tgbotapi.Update) error {
 		return err
 	}
 
-	workouts, err := handler.workoutsService.GetUserWorkouts(userID)
+	workouts, err := handler.workoutsService.GetUserWorkouts(user.ID)
 	if err != nil {
 		logger.Error("Failed to get user workouts: ", err)
 		handlers.SendErrorMessage(

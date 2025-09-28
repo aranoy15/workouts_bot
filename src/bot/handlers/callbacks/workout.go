@@ -111,7 +111,18 @@ func (h *WorkoutHandler) startWorkout(
 		return nil
 	}
 
-	if workout.UserID != uint(userID) {
+	user, err := h.userService.GetByTelegramID(userID)
+	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"user_id": userID,
+			"chat_id": chatID,
+			"error":   err,
+		}).Error("Failed to get user by telegram ID")
+		handlers.SendErrorMessage(h.bot, chatID, "Ошибка при получении пользователя")
+		return nil
+	}
+
+	if workout.UserID != user.ID {
 		logger.WithFields(logrus.Fields{
 			"user_id":    userID,
 			"chat_id":    chatID,
@@ -160,7 +171,18 @@ func (h *WorkoutHandler) editWorkout(
 		return nil
 	}
 
-	if workout.UserID != uint(userID) {
+	user, err := h.userService.GetByTelegramID(userID)
+	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"user_id": userID,
+			"chat_id": chatID,
+			"error":   err,
+		}).Error("Failed to get user by telegram ID")
+		handlers.SendErrorMessage(h.bot, chatID, "Ошибка при получении пользователя")
+		return nil
+	}
+
+	if workout.UserID != user.ID {
 		logger.WithFields(logrus.Fields{
 			"user_id":    userID,
 			"chat_id":    chatID,
@@ -214,7 +236,18 @@ func (h *WorkoutHandler) deleteWorkout(
 		return nil
 	}
 
-	if workout.UserID != uint(userID) {
+	user, err := h.userService.GetByTelegramID(userID)
+	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"user_id": userID,
+			"chat_id": chatID,
+			"error":   err,
+		}).Error("Failed to get user by telegram ID")
+		handlers.SendErrorMessage(h.bot, chatID, "Ошибка при получении пользователя")
+		return nil
+	}
+
+	if workout.UserID != user.ID {
 		logger.WithFields(logrus.Fields{
 			"user_id":    userID,
 			"chat_id":    chatID,

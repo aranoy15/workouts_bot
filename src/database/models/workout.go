@@ -1,11 +1,21 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type WorkoutType struct {
+	ID   uint   `gorm:"primaryKey" json:"id"`
+	Name string `json:"name"`
+}
 
 type Workout struct {
 	ID              uint              `gorm:"primaryKey" json:"id"`
-	UserID          uint              `gorm:"not null" json:"user_id"`
+	UserID          uuid.UUID         `gorm:"type:uuid;not null" json:"user_id"`
 	Name            string            `json:"name"`
+	WorkoutTypeID   uint              `gorm:"not null" json:"workout_type_id"`
 	DurationMinutes int               `json:"duration_minutes"`
 	Status          string            `gorm:"default:'planned'" json:"status"`
 	WorkoutType     string            `json:"workout_type"`

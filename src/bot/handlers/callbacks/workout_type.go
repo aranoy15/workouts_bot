@@ -100,7 +100,7 @@ func (h *WorkoutTypeHandler) createSplitWorkout(
 		"Выберите продолжительность тренировки:"
 
 	editMsg := tgbotapi.NewEditMessageText(chatID, messageID, text)
-	keyboard := keyboards.CreateWorkoutDurationKeyboard()
+	keyboard := keyboards.CreateWorkoutDurationKeyboard("split")
 	editMsg.ReplyMarkup = &keyboard
 
 	_, err := h.bot.Send(editMsg)
@@ -128,7 +128,7 @@ func (h *WorkoutTypeHandler) createPushPullWorkout(
 		"Выберите продолжительность тренировки:"
 
 	editMsg := tgbotapi.NewEditMessageText(chatID, messageID, text)
-	keyboard := keyboards.CreateWorkoutDurationKeyboard()
+	keyboard := keyboards.CreateWorkoutDurationKeyboard("push_pull")
 	editMsg.ReplyMarkup = &keyboard
 
 	_, err := h.bot.Send(editMsg)
@@ -156,7 +156,7 @@ func (h *WorkoutTypeHandler) createFullBodyWorkout(
 		"Выберите продолжительность тренировки:"
 
 	editMsg := tgbotapi.NewEditMessageText(chatID, messageID, text)
-	keyboard := keyboards.CreateWorkoutDurationKeyboard()
+	keyboard := keyboards.CreateWorkoutDurationKeyboard("fullbody")
 	editMsg.ReplyMarkup = &keyboard
 
 	_, err := h.bot.Send(editMsg)
@@ -184,7 +184,7 @@ func (h *WorkoutTypeHandler) createCustomWorkout(
 		"Выберите продолжительность тренировки:"
 
 	editMsg := tgbotapi.NewEditMessageText(chatID, messageID, text)
-	keyboard := keyboards.CreateWorkoutDurationKeyboard()
+	keyboard := keyboards.CreateWorkoutDurationKeyboard("custom")
 	editMsg.ReplyMarkup = &keyboard
 
 	_, err := h.bot.Send(editMsg)
