@@ -8,5 +8,5 @@ type Handler interface {
 
 func SendErrorMessage(bot *tgbotapi.BotAPI, chatID int64, errorText string) {
 	msg := tgbotapi.NewMessage(chatID, "❌ "+errorText)
-	bot.Send(msg)
+	_, _ = bot.Send(msg)
 }

@@ -5,6 +5,7 @@ import (
 	"workouts_bot/pkg/logger"
 	"workouts_bot/src/bot/handlers"
 	"workouts_bot/src/bot/keyboards"
+	"workouts_bot/src/constants"
 	"workouts_bot/src/services"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -74,11 +75,11 @@ func (handler *MyWorkoutsHandler) Handle(update tgbotapi.Update) error {
 		status := getWorkoutStatusEmoji(workout.Status)
 		message += fmt.Sprintf("%d. %s %s\n", index+1, status, workout.Name)
 
-		if workout.Status == "completed" && workout.CompletedAt != nil {
+		if workout.Status == constants.WorkoutStatusCompleted && workout.CompletedAt != nil {
 			message += fmt.Sprintf("   ✅ Завершена: %s\n",
 				workout.CompletedAt.Format("02.01.2006 15:04"),
 			)
-		} else if workout.Status == "in_progress" {
+		} else if workout.Status == constants.WorkoutStatusInProgress {
 			message += "   🔄 В процессе\n"
 		} else {
 			message += "   📋 Запланирована\n"

@@ -121,7 +121,7 @@ func (bot *Bot) handleMessage(update tgbotapi.Update) {
 	handler, ok := bot.messageHandlers[message.Text]
 	if !ok {
 		msg := tgbotapi.NewMessage(message.Chat.ID, "Invalid command")
-		bot.api.Send(msg)
+		_, _ = bot.api.Send(msg)
 		return
 	}
 
@@ -139,7 +139,7 @@ func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 	callbackQuery := update.CallbackQuery
 
 	callback := tgbotapi.NewCallback(callbackQuery.ID, "")
-	bot.api.Request(callback)
+	_, _ = bot.api.Request(callback)
 
 	logger.WithFields(logrus.Fields{
 		"user_id": callbackQuery.From.ID,
@@ -152,7 +152,7 @@ func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 
 	if len(parts) < 1 {
 		msg := tgbotapi.NewMessage(callbackQuery.Message.Chat.ID, "❌ Неверный формат команды")
-		bot.api.Send(msg)
+		_, _ = bot.api.Send(msg)
 		return
 	}
 
@@ -160,7 +160,7 @@ func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 	handler, ok := bot.callbackHandlers[handlerType]
 	if !ok {
 		msg := tgbotapi.NewMessage(callbackQuery.Message.Chat.ID, "❌ Неизвестная команда")
-		bot.api.Send(msg)
+		_, _ = bot.api.Send(msg)
 		return
 	}
 

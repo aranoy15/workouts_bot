@@ -6,6 +6,7 @@ import (
 	"strings"
 	"workouts_bot/pkg/logger"
 	"workouts_bot/src/bot/handlers"
+	"workouts_bot/src/constants"
 	"workouts_bot/src/services"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -101,11 +102,11 @@ func (h *DurationHandler) Handle(update tgbotapi.Update) error {
 	switch workoutType {
 	case "split":
 		workoutName = "Классический сплит"
-	case "push_pull":
+	case constants.WorkoutTypePushPull:
 		workoutName = "Push/Pull/Legs"
 	case "fullbody":
 		workoutName = "Фулбади"
-	case "custom":
+	case constants.WorkoutTypeCustom:
 		workoutName = "Кастомная тренировка"
 	default:
 		workoutName = "Новая тренировка"

@@ -5,6 +5,7 @@ import (
 	"workouts_bot/pkg/logger"
 	"workouts_bot/src/bot/handlers"
 	"workouts_bot/src/bot/keyboards"
+	"workouts_bot/src/constants"
 	"workouts_bot/src/services"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -62,7 +63,7 @@ func (h *SettingsHandler) Handle(update tgbotapi.Update) error {
 		return h.showExperienceMenu(userID, chatID, messageID)
 	case "limitations":
 		return h.showLimitationsMenu(userID, chatID, messageID)
-	case "main":
+	case constants.NavigationMain:
 		return h.showMainSettingsMenu(userID, chatID, messageID)
 	default:
 		logger.WithFields(logrus.Fields{

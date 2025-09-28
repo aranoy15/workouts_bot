@@ -5,6 +5,7 @@ import (
 	"workouts_bot/pkg/logger"
 	"workouts_bot/src/bot/handlers"
 	"workouts_bot/src/bot/keyboards"
+	"workouts_bot/src/constants"
 	"workouts_bot/src/services"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -112,7 +113,7 @@ func getCategoryEmoji(category string) string {
 		return "🏋️ Базовые"
 	case "isolation":
 		return "🎯 Изолированные"
-	case "strength":
+	case constants.ExerciseCategoryStrength:
 		return "💪 Силовые"
 	case "cardio":
 		return "🏃 Кардио"
@@ -120,7 +121,7 @@ func getCategoryEmoji(category string) string {
 		return "🤸 С собственным весом"
 	case "hiit":
 		return "⚡ HIIT"
-	case "endurance":
+	case constants.ExerciseCategoryEndurance:
 		return "🔄 Выносливость"
 	default:
 		return "📋 " + category

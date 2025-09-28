@@ -2,103 +2,31 @@ run:
   timeout: 5m
   modules-download-mode: readonly
 
-linters-settings:
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(github.com)
-  gofmt:
-    simplify: true
-  goimports:
-    local-prefixes: workouts_bot
-  gocyclo:
-    min-complexity: 15
-  dupl:
-    threshold: 100
-  goconst:
-    min-len: 2
-    min-occurrences: 2
-  misspell:
-    locale: US
-  lll:
-    line-length: 140
-  nakedret:
-    max-func-lines: 30
-  prealloc:
-    simple: true
-    range-loops: true
-    for-loops: false
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - dupImport
-      - ifElseChain
-      - octalLiteral
-      - whyNoLint
-      - wrapperFunc
-
 linters:
   enable:
-    - bodyclose
-    - depguard
-    - dogsled
-    - dupl
+    - gofmt
+    - goimports
+    - govet
     - errcheck
-    - exhaustive
+    - gosimple
+    - staticcheck
+    - unused
+    - gosec
+
+  disable:
+    - depguard
     - funlen
-    - gochecknoinits
     - goconst
     - gocritic
     - gocyclo
-    - gofmt
-    - goimports
-    - goprintffuncname
-    - gosec
-    - gosimple
-    - govet
-    - ineffassign
     - lll
     - misspell
     - nakedret
     - noctx
     - nolintlint
     - rowserrcheck
-    - staticcheck
     - stylecheck
     - typecheck
     - unconvert
     - unparam
-    - unused
     - whitespace
-
-  disable:
-    - gochecknoglobals
-    - gocognit
-    - godot
-    - godox
-    - err113
-    - prealloc
-    - wsl
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gomnd
-        - funlen
-        - goconst
-    - path: cmd/
-      linters:
-        - gochecknoinits
-    - text: "weak cryptographic primitive"
-      linters:
-        - gosec
-    - text: "G404"
-      linters:
-        - gosec
