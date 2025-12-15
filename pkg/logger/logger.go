@@ -3,6 +3,7 @@ package logger
 import (
 	"io"
 	"os"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -18,6 +19,23 @@ type Config struct {
 	MaxAge     int
 	Compress   bool
 	Console    bool
+	JSONFormat bool
+}
+
+type YandexCloudFormatter struct {
+	logrus.JSONFormatter
+}
+
+func (f *YandexCloudFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+	entry.Data["level"] = strings.ToUpper(entry.Level.String())
+	entry.Data["message"] = entry.Message
+	entry.Data["timestamp"] = entry.Time.Format("2006-01-02T15:04:05.000Z07:00")
+
+	// Delete duplicate fields
+	delete(entry.Data, "msg")
+	delete(entry.Data, "time")
+
+	return f.JSONFormatter.Format(entry)
 }
 
 func Init(config Config) {
@@ -30,10 +48,25 @@ func Init(config Config) {
 	}
 
 	Log.SetLevel(logLevel)
-	Log.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp:   true,
-		TimestampFormat: "2006-01-02 15:04:05",
-	})
+
+	if config.JSONFormat {
+		Log.SetFormatter(&YandexCloudFormatter{
+			JSONFormatter: logrus.JSONFormatter{
+				TimestampFormat:   "2006-01-02T15:04:05.000Z07:00",
+				DisableTimestamp:  true,
+				DisableHTMLEscape: true,
+				FieldMap: logrus.FieldMap{
+					logrus.FieldKeyLevel: "severity",
+					logrus.FieldKeyMsg:   "message",
+					logrus.FieldKeyTime:  "timestamp",
+				},
+			},
+		})
+	} else {
+		Log.SetFormatter(&logrus.TextFormatter{
+			DisableTimestamp: true,
+		})
+	}
 
 	var writers []io.Writer
 
