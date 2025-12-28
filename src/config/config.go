@@ -1,11 +1,10 @@
 package config
 
 import (
+	"net/url"
 	"os"
 	"strconv"
-	"workouts_bot/pkg/logger"
-
-	"github.com/joho/godotenv"
+	"strings"
 )
 
 type LoggerConfig struct {
@@ -16,6 +15,7 @@ type LoggerConfig struct {
 	MaxAge     int
 	Compress   bool
 	Console    bool
+	JSONFormat bool
 }
 
 type DatabaseConfig struct {
@@ -27,17 +27,22 @@ type DatabaseConfig struct {
 	SSLMode  string
 }
 
+type WebhookConfig struct {
+	Enabled     bool
+	URL         string
+	Path        string
+	Port        int
+	SecretToken string
+}
+
 type Config struct {
 	BotToken string
 	Logger   LoggerConfig
 	Database DatabaseConfig
+	Webhook  WebhookConfig
 }
 
 func Load() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
-		logger.Warn("No .env file found")
-	}
-
 	config := &Config{
 		BotToken: getEnv("BOT_TOKEN", ""),
 		Logger: LoggerConfig{
@@ -48,15 +53,66 @@ func Load() (*Config, error) {
 			MaxAge:     getEnvInt("LOG_MAX_AGE", 30),
 			Compress:   getEnvBool("LOG_COMPRESS", true),
 			Console:    getEnvBool("LOG_CONSOLE", true),
+			JSONFormat: getEnvBool("LOG_JSON_FORMAT", false),
 		},
-		Database: DatabaseConfig{
-			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     getEnvInt("DB_PORT", 5432),
-			User:     getEnv("DB_USER", "postgres"),
-			Password: getEnv("DB_PASSWORD", "postgres"),
-			DBName:   getEnv("DB_NAME", "postgres"),
-			SSLMode:  getEnv("DB_SSL_MODE", "disable"),
+		Database: parseDatabaseConfig(),
+		Webhook: WebhookConfig{
+			Enabled:     getEnvBool("WEBHOOK_ENABLED", true),
+			URL:         getEnv("WEBHOOK_URL", ""),
+			Path:        getEnv("WEBHOOK_PATH", "/webhook"),
+			Port:        getEnvInt("PORT", 8080),
+			SecretToken: getEnv("WEBHOOK_SECRET_TOKEN", ""),
 		},
+	}
+
+	return config, nil
+}
+
+func parseDatabaseConfig() DatabaseConfig {
+	if databaseURL := getEnv("DATABASE_URL", ""); databaseURL != "" {
+		if config, err := parseDatabaseURL(databaseURL); err == nil {
+			return config
+		}
+	}
+
+	return DatabaseConfig{
+		Host:     getEnv("DB_HOST", "localhost"),
+		Port:     getEnvInt("DB_PORT", 5432),
+		User:     getEnv("DB_USER", "postgres"),
+		Password: getEnv("DB_PASSWORD", "postgres"),
+		DBName:   getEnv("DB_NAME", "postgres"),
+		SSLMode:  getEnv("DB_SSL_MODE", "disable"),
+	}
+}
+
+func parseDatabaseURL(databaseURL string) (DatabaseConfig, error) {
+	u, err := url.Parse(databaseURL)
+	if err != nil {
+		return DatabaseConfig{}, err
+	}
+
+	config := DatabaseConfig{
+		Host:    u.Hostname(),
+		Port:    5432,
+		DBName:  strings.TrimPrefix(u.Path, "/"),
+		SSLMode: "disable",
+	}
+
+	if u.Port() != "" {
+		if port, err := strconv.Atoi(u.Port()); err == nil {
+			config.Port = port
+		}
+	}
+
+	if u.User != nil {
+		config.User = u.User.Username()
+		if password, ok := u.User.Password(); ok {
+			config.Password = password
+		}
+	}
+
+	if sslMode := u.Query().Get("sslmode"); sslMode != "" {
+		config.SSLMode = sslMode
 	}
 
 	return config, nil

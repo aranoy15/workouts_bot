@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -22,13 +24,19 @@ func loggerConfig(config *config.Config) logger.Config {
 		MaxBackups: config.Logger.MaxBackups,
 		MaxAge:     config.Logger.MaxAge,
 		Compress:   config.Logger.Compress,
+		JSONFormat: config.Logger.JSONFormat,
 	}
 }
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "--health-check" {
+		healthCheck()
+		return
+	}
+
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal("Failed to load config:", err)
+		log.Println("Failed to load config:", err)
 	}
 
 	logger.Init(loggerConfig(cfg))
@@ -38,11 +46,8 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
-	if err := database.Migrate(db); err != nil {
-		log.Fatal("Failed to migrate database:", err)
-	}
 
-	bot, err := bot.New(cfg.BotToken, db)
+	bot, err := bot.New(cfg.BotToken, db, &cfg.Webhook)
 	if err != nil {
 		log.Fatal("Failed to create bot:", err)
 	}
@@ -54,7 +59,7 @@ func main() {
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		if err := bot.Start(botContext); err != nil {
+		if err := bot.Start(botContext, db); err != nil {
 			logger.Error("Bot error:", err)
 			cancel()
 		}
@@ -76,7 +81,35 @@ func main() {
 	select {
 	case <-shutdownContext.Done():
 		logger.Warn("Shutdown timeout exceeded, forcing exit")
-	case <-time.After(5 * time.Second):
+	case <-time.After(0 * time.Second):
 		logger.Info("Shutdown completed")
 	}
+}
+
+func healthCheck() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	url := fmt.Sprintf("http://localhost:%s/health", port)
+
+	client := &http.Client{
+		Timeout: 3 * time.Second,
+	}
+
+	resp, err := client.Get(url)
+	if err != nil {
+		log.Printf("Health check failed: %v", err)
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Health check failed: status %d", resp.StatusCode)
+		os.Exit(1)
+	}
+
+	log.Println("Health check passed")
+	os.Exit(0)
 }

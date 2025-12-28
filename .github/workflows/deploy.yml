@@ -1,0 +1,224 @@
+name: Deploy to Yandex Cloud
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - production
+        - staging
+
+env:
+  REGISTRY_ID: ${{ secrets.YC_REGISTRY_ID }}
+  SERVICE_ACCOUNT_KEY: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
+  FOLDER_ID: ${{ secrets.YC_FOLDER_ID }}
+  CONTAINER_NAME: ${{ secrets.YC_CONTAINER_NAME }}
+  IMAGE_NAME: workouts-bot
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up environment variables
+      run: |
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "ENVIRONMENT=production" >> $GITHUB_ENV
+          echo "IMAGE_TAG=latest" >> $GITHUB_ENV
+        elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+          echo "ENVIRONMENT=production" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        else
+          echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${{ github.event.inputs.environment }}-${GITHUB_SHA::8}" >> $GITHUB_ENV
+        fi
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Configure Yandex Cloud CLI
+      run: |
+        curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
+        echo "$HOME/yandex-cloud/bin" >> $GITHUB_PATH
+
+    - name: Authenticate with Yandex Cloud
+      run: |
+        echo '${{ secrets.YC_SERVICE_ACCOUNT_KEY }}' | base64 -d > key.json
+        yc config profile create ci-profile
+        yc config set service-account-key key.json
+        yc config set cloud-id ${{ secrets.YC_CLOUD_ID }}
+        yc config set folder-id ${{ secrets.YC_FOLDER_ID }}
+        rm key.json
+
+    - name: Login to Yandex Container Registry
+      run: |
+        yc container registry configure-docker
+        echo $(yc iam create-token) | docker login cr.yandex --username iam --password-stdin
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/amd64
+        push: true
+        tags: |
+          cr.yandex/${{ env.REGISTRY_ID }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          cr.yandex/${{ env.REGISTRY_ID }}/${{ env.IMAGE_NAME }}:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          BUILDKIT_INLINE_CACHE=1
+
+    - name: Get current container revision
+      id: get-revision
+      run: |
+        CURRENT_REVISION=$(yc serverless container revision list \
+          --container-name ${{ env.CONTAINER_NAME }} \
+          --limit 1 \
+          --format json | jq -r '.[0].id // empty')
+        echo "current_revision=$CURRENT_REVISION" >> $GITHUB_OUTPUT
+
+    - name: Deploy to Yandex Serverless Containers
+      run: |
+        yc serverless container revision deploy \
+          --container-name ${{ env.CONTAINER_NAME }} \
+          --image cr.yandex/${{ env.REGISTRY_ID }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
+          --cores 1 \
+          --memory 512MB \
+          --concurrency 4 \
+          --execution-timeout 30s \
+          --environment BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
+          --environment DATABASE_URL=${{ secrets.DATABASE_URL }} \
+          --environment LOG_LEVEL=info \
+          --environment LOG_CONSOLE=true \
+          --service-account-id ${{ secrets.YC_SERVICE_ACCOUNT_ID }}
+
+    - name: Wait for deployment
+      run: |
+        echo "Waiting for deployment to complete..."
+        sleep 30
+
+        # Check if new revision is active
+        ACTIVE_REVISION=$(yc serverless container get ${{ env.CONTAINER_NAME }} --format json | jq -r '.status.url // empty')
+        if [ -n "$ACTIVE_REVISION" ]; then
+          echo "✅ Deployment successful!"
+          echo "Container URL: $ACTIVE_REVISION"
+        else
+          echo "❌ Deployment may have failed"
+          exit 1
+        fi
+
+    - name: Run health check
+      run: |
+        # Get container URL
+        CONTAINER_URL=$(yc serverless container get ${{ env.CONTAINER_NAME }} --format json | jq -r '.status.url // empty')
+
+        if [ -n "$CONTAINER_URL" ]; then
+          echo "Running health check on: $CONTAINER_URL"
+
+          # Try to reach the health endpoint
+          for i in {1..5}; do
+            if curl -f -s "$CONTAINER_URL/health" > /dev/null 2>&1; then
+              echo "✅ Health check passed!"
+              break
+            else
+              echo "⏳ Health check attempt $i/5 failed, retrying in 10s..."
+              sleep 10
+            fi
+
+            if [ $i -eq 5 ]; then
+              echo "❌ Health check failed after 5 attempts"
+              echo "Container may still be starting up or there might be an issue"
+            fi
+          done
+        else
+          echo "⚠️ Could not get container URL for health check"
+        fi
+
+    - name: Cleanup old revisions
+      run: |
+        echo "Cleaning up old container revisions..."
+
+        # Keep last 5 revisions, delete older ones
+        OLD_REVISIONS=$(yc serverless container revision list \
+          --container-name ${{ env.CONTAINER_NAME }} \
+          --format json | jq -r '.[5:] | .[].id')
+
+        if [ -n "$OLD_REVISIONS" ]; then
+          echo "Deleting old revisions:"
+          echo "$OLD_REVISIONS"
+
+          for revision in $OLD_REVISIONS; do
+            yc serverless container revision delete $revision --async || true
+          done
+
+          echo "✅ Cleanup completed"
+        else
+          echo "No old revisions to clean up"
+        fi
+
+    - name: Notify deployment status
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "🚀 Deployment to ${{ env.ENVIRONMENT }} completed successfully!"
+          echo "Image: cr.yandex/${{ env.REGISTRY_ID }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          echo "Container: ${{ env.CONTAINER_NAME }}"
+        else
+          echo "❌ Deployment to ${{ env.ENVIRONMENT }} failed!"
+        fi
+
+  rollback:
+    runs-on: ubuntu-latest
+    if: failure() && needs.deploy.result == 'failure'
+    needs: deploy
+
+    steps:
+    - name: Configure Yandex Cloud CLI
+      run: |
+        curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
+        echo "$HOME/yandex-cloud/bin" >> $GITHUB_PATH
+
+    - name: Authenticate with Yandex Cloud
+      run: |
+        echo '${{ secrets.YC_SERVICE_ACCOUNT_KEY }}' | base64 -d > key.json
+        yc config profile create ci-profile
+        yc config set service-account-key key.json
+        yc config set cloud-id ${{ secrets.YC_CLOUD_ID }}
+        yc config set folder-id ${{ secrets.YC_FOLDER_ID }}
+        rm key.json
+
+    - name: Rollback to previous revision
+      run: |
+        echo "🔄 Rolling back to previous revision..."
+
+        # Get previous working revision (second in the list)
+        PREVIOUS_REVISION=$(yc serverless container revision list \
+          --container-name ${{ env.CONTAINER_NAME }} \
+          --limit 2 \
+          --format json | jq -r '.[1].id // empty')
+
+        if [ -n "$PREVIOUS_REVISION" ]; then
+          echo "Rolling back to revision: $PREVIOUS_REVISION"
+
+          yc serverless container revision deploy \
+            --container-name ${{ env.CONTAINER_NAME }} \
+            --revision-id $PREVIOUS_REVISION
+
+          echo "✅ Rollback completed successfully!"
+        else
+          echo "❌ No previous revision found for rollback"
+          exit 1
+        fi
