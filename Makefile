@@ -15,7 +15,7 @@ YELLOW=\033[1;33m
 BLUE=\033[0;34m
 NC=\033[0m # No Color
 
-.PHONY: help build run clean test fmt vet install dev stop logs
+.PHONY: help build run clean test fmt vet install dev stop logs docker-build docker-push docker-login docker-registry-list docker-registry-create docker-image-list
 
 # Помощь - показывает все доступные команды
 help:
@@ -30,6 +30,12 @@ help:
 	@echo "  $(GREEN)clean$(NC)     - Очистить собранные файлы"
 	@echo "  $(GREEN)stop$(NC)      - Остановить запущенный бот"
 	@echo "  $(GREEN)logs$(NC)      - Показать логи бота"
+	@echo "  $(GREEN)docker-login$(NC) - Войти в Yandex Cloud Container Registry"
+	@echo "  $(GREEN)docker-build$(NC) - Собрать Docker образ"
+	@echo "  $(GREEN)docker-push$(NC) - Загрузить Docker образ в registry"
+	@echo "  $(GREEN)docker-registry-list$(NC) - Показать список реестров"
+	@echo "  $(GREEN)docker-registry-create$(NC) - Создать новый реестр"
+	@echo "  $(GREEN)docker-image-list$(NC) - Показать список образов в registry"
 	@echo "  $(GREEN)help$(NC)      - Показать эту справку"
 
 # Создать директорию bin если её нет
@@ -102,6 +108,63 @@ clean:
 	@echo "$(BLUE)Очистка...$(NC)"
 	rm -rf bin/
 	@echo "$(GREEN)Очистка завершена!$(NC)"
+
+# Войти в Yandex Cloud Container Registry
+docker-login:
+	@echo "$(BLUE)Вход в Yandex Cloud Container Registry...$(NC)"
+	@echo "$(YELLOW)Убедитесь, что вы выполнили 'yc init' ранее$(NC)"
+	docker login cr.yandex --username iam --password $$(yc iam create-token)
+	@echo "$(GREEN)Вход выполнен успешно!$(NC)"
+
+# Собрать Docker образ
+docker-build:
+	@echo "$(BLUE)Сборка Docker образа...$(NC)"
+	docker build -t workouts-bot .
+	@echo "$(GREEN)Docker образ собран!$(NC)"
+
+# Загрузить Docker образ в registry (требует переменную REGISTRY_ID)
+docker-push: docker-build
+	@echo "$(BLUE)Загрузка образа в Yandex Cloud Registry...$(NC)"
+	@if [ -z "$(REGISTRY_ID)" ]; then \
+		echo "$(YELLOW)REGISTRY_ID не указан, пытаюсь получить автоматически...$(NC)"; \
+		REGISTRY_ID=$$(yc container registry list --format=json | jq -r '.[0].id' 2>/dev/null); \
+		if [ -z "$$REGISTRY_ID" ] || [ "$$REGISTRY_ID" = "null" ]; then \
+			echo "$(RED)Ошибка: Не удалось получить ID реестра автоматически$(NC)"; \
+			echo "$(YELLOW)Пожалуйста, укажите ID реестра через переменную REGISTRY_ID$(NC)"; \
+			echo "$(YELLOW)Или создайте новый реестр: make docker-registry-create$(NC)"; \
+			echo "$(YELLOW)Пример: make docker-push REGISTRY_ID=your-registry-id$(NC)"; \
+			exit 1; \
+		else \
+			echo "$(GREEN)Найден реестр с ID: $$REGISTRY_ID$(NC)"; \
+			echo "$(BLUE)Тегирование образа...$(NC)"; \
+			docker tag workouts-bot cr.yandex/$$REGISTRY_ID/workouts-bot:latest; \
+			echo "$(BLUE)Загрузка образа в registry...$(NC)"; \
+			docker push cr.yandex/$$REGISTRY_ID/workouts-bot:latest; \
+		fi; \
+	else \
+		echo "$(GREEN)Используется указанный ID реестра: $(REGISTRY_ID)$(NC)"; \
+		echo "$(BLUE)Тегирование образа...$(NC)"; \
+		docker tag workouts-bot cr.yandex/$(REGISTRY_ID)/workouts-bot:latest; \
+		echo "$(BLUE)Загрузка образа в registry...$(NC)"; \
+		docker push cr.yandex/$(REGISTRY_ID)/workouts-bot:latest; \
+	fi
+	@echo "$(GREEN)Образ успешно загружен в registry!$(NC)"
+
+# Показать список реестров
+docker-registry-list:
+	@echo "$(BLUE)Список реестров в Yandex Cloud:$(NC)"
+	@yc container registry list || echo "$(RED)Ошибка: не удалось получить список реестров. Убедитесь, что вы вошли в Yandex Cloud (yc init)$(NC)"
+
+# Создать новый реестр
+docker-registry-create:
+	@echo "$(BLUE)Создание нового реестра...$(NC)"
+	@yc container registry create --name workouts-bot-registry || echo "$(RED)Ошибка: не удалось создать реестр$(NC)"
+	@echo "$(GREEN)Реестр создан! Используйте 'make docker-registry-list' для получения ID$(NC)"
+
+# Показать список образов в registry
+docker-image-list:
+	@echo "$(BLUE)Список образов в Yandex Cloud Registry:$(NC)"
+	@yc container image list || echo "$(RED)Ошибка: не удалось получить список образов. Убедитесь, что вы вошли в Yandex Cloud (yc init)$(NC)"
 
 # По умолчанию показываем помощь
 .DEFAULT_GOAL := help
