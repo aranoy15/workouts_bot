@@ -20,6 +20,7 @@ Thumbs.db
 
 # Build artifacts
 dist/
+__debug_bin*
 *.exe
 *.dll
 *.so

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 	"workouts_bot/src/config"
-	"workouts_bot/src/database/models"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -41,17 +40,4 @@ func Connect(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	return db, nil
-}
-
-func Migrate(db *gorm.DB) error {
-	return db.AutoMigrate(
-		&models.User{},
-		&models.WorkoutType{},
-		&models.Exercise{},
-		&models.Equipment{},
-		&models.Workout{},
-		&models.WorkoutExercise{},
-		&models.Set{},
-		&models.WeightHistory{},
-	)
 }

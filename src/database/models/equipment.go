@@ -15,6 +15,10 @@ type Equipment struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+func (Equipment) TableName() string {
+	return "workouts.equipments"
+}
+
 func (e *Equipment) BeforeCreate(tx *gorm.DB) error {
 	if e.Type == "" {
 		e.Type = "general"

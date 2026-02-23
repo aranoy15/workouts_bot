@@ -18,6 +18,10 @@ type WeightHistory struct {
 	Exercise   Exercise  `gorm:"foreignKey:ExerciseID" json:"exercise"`
 }
 
+func (WeightHistory) TableName() string {
+	return "workouts.weight_histories"
+}
+
 func (wh *WeightHistory) BeforeCreate(tx *gorm.DB) error {
 	if wh.RecordedAt.IsZero() {
 		wh.RecordedAt = time.Now()

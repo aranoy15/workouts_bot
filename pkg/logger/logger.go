@@ -31,10 +31,6 @@ func (f *YandexCloudFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	entry.Data["message"] = entry.Message
 	entry.Data["timestamp"] = entry.Time.Format("2006-01-02T15:04:05.000Z07:00")
 
-	// Delete duplicate fields
-	delete(entry.Data, "msg")
-	delete(entry.Data, "time")
-
 	return f.JSONFormatter.Format(entry)
 }
 

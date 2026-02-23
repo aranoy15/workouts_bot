@@ -6,9 +6,17 @@ import (
 	"github.com/google/uuid"
 )
 
+func (WorkoutType) TableName() string {
+	return "workouts.workout_types"
+}
+
 type WorkoutType struct {
 	ID   uint   `gorm:"primaryKey" json:"id"`
 	Name string `json:"name"`
+}
+
+func (Workout) TableName() string {
+	return "workouts.workouts"
 }
 
 type Workout struct {
@@ -25,6 +33,10 @@ type Workout struct {
 	Exercises       []WorkoutExercise `gorm:"foreignKey:WorkoutID" json:"exercises"`
 }
 
+func (WorkoutExercise) TableName() string {
+	return "workouts.workout_exercises"
+}
+
 type WorkoutExercise struct {
 	ID          uint       `gorm:"primaryKey" json:"id"`
 	WorkoutID   uint       `gorm:"not null" json:"workout_id"`
@@ -38,6 +50,10 @@ type WorkoutExercise struct {
 	Workout     Workout    `gorm:"foreignKey:WorkoutID" json:"workout"`
 	Exercise    Exercise   `gorm:"foreignKey:ExerciseID" json:"exercise"`
 	Sets        []Set      `gorm:"foreignKey:WorkoutExerciseID" json:"sets"`
+}
+
+func (Set) TableName() string {
+	return "workouts.sets"
 }
 
 type Set struct {

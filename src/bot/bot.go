@@ -11,7 +11,6 @@ import (
 	"workouts_bot/src/bot/handlers/messages"
 	"workouts_bot/src/bot/keyboards"
 	"workouts_bot/src/config"
-	"workouts_bot/src/database"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
@@ -99,10 +98,6 @@ func (bot *Bot) Start(botContext context.Context, db *gorm.DB) error {
 func (bot *Bot) startPolling(botContext context.Context, db *gorm.DB) error {
 	logger.Info("Starting bot in long polling mode...")
 
-	if err := database.Migrate(db); err != nil {
-		return fmt.Errorf("failed to migrate database: %w", err)
-	}
-
 	_, _ = bot.api.Request(tgbotapi.DeleteWebhookConfig{})
 
 	botUpdate := tgbotapi.NewUpdate(0)
@@ -146,17 +141,6 @@ func (bot *Bot) startWebhook(botContext context.Context, db *gorm.DB) error {
 		Addr: fmt.Sprintf(":%d", bot.webhookConfig.Port),
 	}
 
-	http.HandleFunc("/migrate", func(w http.ResponseWriter, r *http.Request) {
-		if err := database.Migrate(db); err != nil {
-			logger.Error("Failed to migrate database:", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte("Failed to migrate database"))
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("MIGRATING"))
-	})
-
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("OK"))
@@ -164,7 +148,7 @@ func (bot *Bot) startWebhook(botContext context.Context, db *gorm.DB) error {
 
 	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("PONG"))
+		_, _ = w.Write([]byte("OK"))
 	})
 
 	go func() {

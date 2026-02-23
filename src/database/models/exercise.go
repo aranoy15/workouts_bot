@@ -23,6 +23,10 @@ type Exercise struct {
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
+func (Exercise) TableName() string {
+	return "workouts.exercises"
+}
+
 func (exercise *Exercise) BeforeCreate(tx *gorm.DB) error {
 	if exercise.Difficulty == 0 {
 		exercise.Difficulty = 1

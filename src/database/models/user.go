@@ -61,6 +61,10 @@ type User struct {
 	UpdatedAt    time.Time  `json:"updated_at"`
 }
 
+func (User) TableName() string {
+	return "workouts.users"
+}
+
 func (user *User) BeforeCreate(tx *gorm.DB) error {
 	if user.Experience == 0 {
 		user.Experience = 1
