@@ -3,7 +3,7 @@
 # Переменные
 BINARY_NAME=bot
 BINARY_PATH=bin/$(BINARY_NAME)
-MAIN_PATH=cmd/bot/main.go
+PKG_PATH=./cmd/bot
 
 # Go переменные
 GO=go
@@ -46,7 +46,7 @@ install:
 # Собрать бинарный файл
 build: bin
 	@echo "$(BLUE)Сборка $(BINARY_NAME)...$(NC)"
-	$(GO) build -o $(BINARY_PATH) $(MAIN_PATH)
+	$(GO) build -o $(BINARY_PATH) $(PKG_PATH)
 	@echo "$(GREEN)Сборка завершена: $(BINARY_PATH)$(NC)"
 
 # Запустить бота

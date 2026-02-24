@@ -39,19 +39,24 @@ go run cmd/bot/main.go
 
 ```
 workouts_bot/
-├── cmd/bot/                    # Точка входа приложения
+├── cmd/                        # Точки входа приложения
+│   ├── bot/                    # Telegram-бот
+│   │   └── main.go
+│   └── server/                 # (планируется) Сервер редактирования упражнений
 ├── src/
-│   ├── bot/                    # Основная логика бота
+│   ├── bot/                    # Логика бота (handlers, keyboards)
 │   │   ├── handlers/          # Обработчики команд и callback'ов
 │   │   │   ├── messages/      # Обработчики текстовых сообщений
 │   │   │   └── callbacks/     # Обработчики inline кнопок
 │   │   └── keyboards/         # Клавиатуры (reply и inline)
 │   ├── config/                # Конфигурация приложения
-│   ├── database/              # Модели данных и подключение к БД
-│   │   └── models/           # GORM модели
-│   └── services/              # Бизнес-логика и сервисы
+│   ├── database/              # Подключение к БД
+│   ├── models/                 # GORM модели
+│   ├── services/              # Бизнес-логика и сервисы
+│   ├── clients/                # Внешние клиенты (S3 и т.д.)
+│   ├── constants/              # Константы
+│   └── logger/                 # Система логирования
 ├── data/                      # JSON файлы с упражнениями и оборудованием
-├── pkg/logger/                # Система логирования
 ├── docker/                    # Docker конфигурация
 │   ├── docker-compose.yml
 │   ├── init.sql

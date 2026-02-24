@@ -1,8 +1,8 @@
 package services
 
 import (
-	"workouts_bot/pkg/logger"
-	"workouts_bot/src/database/models"
+	"workouts_bot/src/logger"
+	"workouts_bot/src/models"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"workouts_bot/pkg/logger"
+	"workouts_bot/src/logger"
 	"workouts_bot/src/bot/handlers"
 	"workouts_bot/src/bot/handlers/callbacks"
 	"workouts_bot/src/bot/handlers/messages"

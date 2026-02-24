@@ -2,8 +2,8 @@ package services
 
 import (
 	"time"
-	"workouts_bot/pkg/logger"
-	"workouts_bot/src/database/models"
+	"workouts_bot/src/logger"
+	"workouts_bot/src/models"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"

@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"workouts_bot/pkg/logger"
+	"workouts_bot/src/logger"
 	"workouts_bot/src/bot/handlers"
-	"workouts_bot/src/database/models"
+	"workouts_bot/src/models"
 	"workouts_bot/src/services"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"

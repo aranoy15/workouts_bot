@@ -9,22 +9,21 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-	"workouts_bot/pkg/logger"
-	"workouts_bot/src/bot"
+
 	"workouts_bot/src/config"
-	"workouts_bot/src/database"
+	"workouts_bot/src/logger"
 )
 
-func loggerConfig(config *config.Config) logger.Config {
+func loggerConfig(cfg *config.Config) logger.Config {
 	return logger.Config{
-		Level:      config.Logger.Level,
-		Console:    config.Logger.Console,
-		FilePath:   config.Logger.FilePath,
-		MaxSize:    config.Logger.MaxSize,
-		MaxBackups: config.Logger.MaxBackups,
-		MaxAge:     config.Logger.MaxAge,
-		Compress:   config.Logger.Compress,
-		JSONFormat: config.Logger.JSONFormat,
+		Level:      cfg.Logger.Level,
+		Console:    cfg.Logger.Console,
+		FilePath:   cfg.Logger.FilePath,
+		MaxSize:    cfg.Logger.MaxSize,
+		MaxBackups: cfg.Logger.MaxBackups,
+		MaxAge:     cfg.Logger.MaxAge,
+		Compress:   cfg.Logger.Compress,
+		JSONFormat: cfg.Logger.JSONFormat,
 	}
 }
 
@@ -42,14 +41,9 @@ func main() {
 	logger.Init(loggerConfig(cfg))
 	logger.Info("Starting workouts bot...")
 
-	db, err := database.Connect(&cfg.Database)
+	app, err := InitializeBot()
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
-	}
-
-	bot, err := bot.New(cfg.BotToken, db, &cfg.Webhook)
-	if err != nil {
-		log.Fatal("Failed to create bot:", err)
+		log.Fatal("Failed to initialize bot:", err)
 	}
 
 	botContext, cancel := context.WithCancel(context.Background())
@@ -59,14 +53,14 @@ func main() {
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		if err := bot.Start(botContext, db); err != nil {
+		if err := app.Bot.Start(botContext, app.DB); err != nil {
 			logger.Error("Bot error:", err)
 			cancel()
 		}
 	}()
 
-	signal := <-signalChan
-	logger.Info("Received signal:", signal.String())
+	sig := <-signalChan
+	logger.Info("Received signal:", sig.String())
 	logger.Info("Shutting down gracefully...")
 
 	cancel()

@@ -2,7 +2,7 @@ package callbacks
 
 import (
 	"strings"
-	"workouts_bot/pkg/logger"
+	"workouts_bot/src/logger"
 	"workouts_bot/src/bot/handlers"
 	"workouts_bot/src/services"
 
