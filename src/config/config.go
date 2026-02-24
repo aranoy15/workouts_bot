@@ -35,11 +35,20 @@ type WebhookConfig struct {
 	SecretToken string
 }
 
+type S3Config struct {
+	Endpoint        string
+	AccessKeyID     string
+	SecretAccessKey string
+	BucketName      string
+	Region          string
+}
+
 type Config struct {
 	BotToken string
 	Logger   LoggerConfig
 	Database DatabaseConfig
 	Webhook  WebhookConfig
+	S3       S3Config
 }
 
 func Load() (*Config, error) {
@@ -62,6 +71,13 @@ func Load() (*Config, error) {
 			Path:        getEnv("WEBHOOK_PATH", "/webhook"),
 			Port:        getEnvInt("PORT", 8080),
 			SecretToken: getEnv("WEBHOOK_SECRET_TOKEN", ""),
+		},
+		S3: S3Config{
+			Endpoint:        getEnv("S3_ENDPOINT", "https://storage.yandexcloud.net"),
+			AccessKeyID:     getEnv("S3_ACCESS_KEY_ID", ""),
+			SecretAccessKey: getEnv("S3_SECRET_ACCESS_KEY", ""),
+			BucketName:      getEnv("S3_BUCKET_NAME", ""),
+			Region:          getEnv("S3_REGION", "ru-central1"),
 		},
 	}
 
