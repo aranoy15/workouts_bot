@@ -2,11 +2,9 @@ package callbacks
 
 import (
 	"strings"
-	"workouts_bot/src/logger"
 	"workouts_bot/src/bot/handlers"
 	"workouts_bot/src/bot/keyboards"
-	"workouts_bot/src/constants"
-	"workouts_bot/src/services"
+	"workouts_bot/src/logger"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
@@ -16,14 +14,14 @@ import (
 const SettingsCallbackType = "settings"
 
 type SettingsHandler struct {
-	bot         *tgbotapi.BotAPI
-	userService *services.UserService
+	bot      *tgbotapi.BotAPI
+	database *gorm.DB
 }
 
 func NewSettingsHandler(bot *tgbotapi.BotAPI, database *gorm.DB) *SettingsHandler {
 	return &SettingsHandler{
-		bot:         bot,
-		userService: services.NewUserService(database),
+		bot:      bot,
+		database: database,
 	}
 }
 
@@ -55,15 +53,9 @@ func (h *SettingsHandler) Handle(update tgbotapi.Update) error {
 	setting := parts[1]
 
 	switch setting {
-	case "goals":
-		return h.showGoalsMenu(userID, chatID, messageID)
-	case "equipment":
-		return h.showEquipmentMenu(userID, chatID, messageID)
 	case "experience":
 		return h.showExperienceMenu(userID, chatID, messageID)
-	case "limitations":
-		return h.showLimitationsMenu(userID, chatID, messageID)
-	case constants.NavigationMain:
+	case "experience_back":
 		return h.showMainSettingsMenu(userID, chatID, messageID)
 	default:
 		logger.WithFields(logrus.Fields{
@@ -103,60 +95,6 @@ func (h *SettingsHandler) showMainSettingsMenu(
 	return err
 }
 
-func (h *SettingsHandler) showGoalsMenu(
-	userID int64,
-	chatID int64,
-	messageID int,
-) error {
-	logger.WithFields(logrus.Fields{
-		"user_id": userID,
-		"chat_id": chatID,
-	}).Info("Showing goals menu")
-
-	text := "🎯 Выберите ваши цели тренировок:"
-
-	editMsg := tgbotapi.NewEditMessageText(chatID, messageID, text)
-	keyboard := keyboards.CreateGoalSelectionKeyboard()
-	editMsg.ReplyMarkup = &keyboard
-
-	_, err := h.bot.Send(editMsg)
-	if err != nil {
-		logger.WithFields(logrus.Fields{
-			"user_id": userID,
-			"chat_id": chatID,
-			"error":   err,
-		}).Error("Failed to send goals menu")
-	}
-	return err
-}
-
-func (h *SettingsHandler) showEquipmentMenu(
-	userID int64,
-	chatID int64,
-	messageID int,
-) error {
-	logger.WithFields(logrus.Fields{
-		"user_id": userID,
-		"chat_id": chatID,
-	}).Info("Showing equipment menu")
-
-	text := "🏋️ Какое оборудование у вас есть?"
-
-	editMsg := tgbotapi.NewEditMessageText(chatID, messageID, text)
-	keyboard := keyboards.CreateEquipmentKeyboard()
-	editMsg.ReplyMarkup = &keyboard
-
-	_, err := h.bot.Send(editMsg)
-	if err != nil {
-		logger.WithFields(logrus.Fields{
-			"user_id": userID,
-			"chat_id": chatID,
-			"error":   err,
-		}).Error("Failed to send equipment menu")
-	}
-	return err
-}
-
 func (h *SettingsHandler) showExperienceMenu(
 	userID int64,
 	chatID int64,
@@ -180,33 +118,6 @@ func (h *SettingsHandler) showExperienceMenu(
 			"chat_id": chatID,
 			"error":   err,
 		}).Error("Failed to send experience menu")
-	}
-	return err
-}
-
-func (h *SettingsHandler) showLimitationsMenu(
-	userID int64,
-	chatID int64,
-	messageID int,
-) error {
-	logger.WithFields(logrus.Fields{
-		"user_id": userID,
-		"chat_id": chatID,
-	}).Info("Showing limitations menu")
-
-	text := "⚠️ Есть ли у вас ограничения по здоровью?"
-
-	editMsg := tgbotapi.NewEditMessageText(chatID, messageID, text)
-	keyboard := keyboards.CreateBackKeyboard("settings:main")
-	editMsg.ReplyMarkup = &keyboard
-
-	_, err := h.bot.Send(editMsg)
-	if err != nil {
-		logger.WithFields(logrus.Fields{
-			"user_id": userID,
-			"chat_id": chatID,
-			"error":   err,
-		}).Error("Failed to send limitations menu")
 	}
 	return err
 }

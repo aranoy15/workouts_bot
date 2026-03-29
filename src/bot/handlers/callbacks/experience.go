@@ -3,9 +3,9 @@ package callbacks
 import (
 	"strconv"
 	"strings"
-	"workouts_bot/src/logger"
 	"workouts_bot/src/bot/handlers"
-	"workouts_bot/src/services"
+	"workouts_bot/src/database"
+	"workouts_bot/src/logger"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
@@ -15,14 +15,14 @@ import (
 const ExperienceCallbackType = "experience"
 
 type ExperienceHandler struct {
-	bot         *tgbotapi.BotAPI
-	userService *services.UserService
+	bot      *tgbotapi.BotAPI
+	database *gorm.DB
 }
 
 func NewExperienceHandler(bot *tgbotapi.BotAPI, database *gorm.DB) *ExperienceHandler {
 	return &ExperienceHandler{
-		bot:         bot,
-		userService: services.NewUserService(database),
+		bot:      bot,
+		database: database,
 	}
 }
 
@@ -71,7 +71,7 @@ func (h *ExperienceHandler) Handle(update tgbotapi.Update) error {
 		"experience": experience,
 	}).Info("Updating user experience level")
 
-	user, err := h.userService.GetByTelegramID(userID)
+	user, err := database.GetUserByTelegramID(userID, h.database)
 	if err != nil {
 		logger.WithFields(logrus.Fields{
 			"user_id": userID,
@@ -84,7 +84,7 @@ func (h *ExperienceHandler) Handle(update tgbotapi.Update) error {
 
 	user.Experience = experience
 
-	if err := h.userService.CreateOrUpdate(user); err != nil {
+	if err := database.UpsertUser(user, h.database); err != nil {
 		logger.WithFields(logrus.Fields{
 			"user_id":    userID,
 			"chat_id":    chatID,

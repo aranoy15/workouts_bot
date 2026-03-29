@@ -2,10 +2,10 @@ package messages
 
 import (
 	"fmt"
-	"workouts_bot/src/logger"
 	"workouts_bot/src/bot/handlers"
 	"workouts_bot/src/bot/keyboards"
-	"workouts_bot/src/services"
+	"workouts_bot/src/database"
+	"workouts_bot/src/logger"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
@@ -13,14 +13,14 @@ import (
 )
 
 type SettingsHandler struct {
-	bot         *tgbotapi.BotAPI
-	userService *services.UserService
+	bot      *tgbotapi.BotAPI
+	database *gorm.DB
 }
 
 func NewSettingsHandler(bot *tgbotapi.BotAPI, database *gorm.DB) *SettingsHandler {
 	return &SettingsHandler{
-		bot:         bot,
-		userService: services.NewUserService(database),
+		bot:      bot,
+		database: database,
 	}
 }
 
@@ -33,47 +33,19 @@ func (handler *SettingsHandler) Handle(update tgbotapi.Update) error {
 		"user_id": userID,
 	}).Info("Settings handler")
 
-	user, err := handler.userService.GetByTelegramID(userID)
+	user, err := database.GetUserByTelegramID(userID, handler.database)
 	if err != nil {
-		logger.Error("Failed to get user by telegram ID: ", err)
-		handlers.SendErrorMessage(
-			handler.bot, chatID,
-			"Ошибка при получении пользователя",
-		)
-		return err
+		logger.WithFields(logrus.Fields{
+			"chat_id": chatID,
+			"user_id": userID,
+			"error":   err,
+		}).Error("Failed to get user by telegram ID")
+		handlers.SendErrorMessage(handler.bot, chatID, "Пользователь не найден")
+		return nil
 	}
 
 	message := "⚙️ Ваши настройки:\n\n"
-
-	message += "🎯 Цели:\n"
-	if len(user.Goals) == 0 {
-		message += "   Не установлены\n"
-	} else {
-		for _, goal := range user.Goals {
-			message += fmt.Sprintf("   • %s\n", getGoalEmoji(string(goal)))
-		}
-	}
-	message += "\n"
-
 	message += fmt.Sprintf("📈 Уровень опыта: %s\n\n", getExperienceLevel(user.Experience))
-	message += "🏋️ Оборудование:\n"
-	if len(user.EquipmentIDs) == 0 {
-		message += "   Не настроено\n"
-	} else {
-		message += fmt.Sprintf("   Настроено %d типов оборудования\n", len(user.EquipmentIDs))
-	}
-	message += "\n"
-
-	message += "⚠️ Ограничения:\n"
-	if len(user.Limitations) == 0 {
-		message += "   Не указаны\n"
-	} else {
-		for _, limitation := range user.Limitations {
-			message += fmt.Sprintf("   • %s\n", limitation)
-		}
-	}
-	message += "\n"
-
 	message += "Используйте кнопки ниже для изменения настроек:"
 
 	msg := tgbotapi.NewMessage(chatID, message)
@@ -83,28 +55,13 @@ func (handler *SettingsHandler) Handle(update tgbotapi.Update) error {
 	return err
 }
 
-func getGoalEmoji(goal string) string {
-	switch goal {
-	case "muscle_gain":
-		return "💪 Набор массы"
-	case "strength":
-		return "🏋️ Сила"
-	case "endurance":
-		return "🏃 Выносливость"
-	case "weight_loss":
-		return "🔥 Похудение"
-	default:
-		return "📋 " + goal
-	}
-}
-
 func getExperienceLevel(experience int) string {
 	switch {
-	case experience <= 1:
+	case experience < 1:
 		return "🟢 Начинающий"
-	case experience <= 3:
+	case experience < 3:
 		return "🟡 Средний"
-	case experience <= 5:
+	case experience < 5:
 		return "🟠 Продвинутый"
 	default:
 		return "🔴 Эксперт"

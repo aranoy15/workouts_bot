@@ -3,22 +3,12 @@ package keyboards
 import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 const (
-	StartMessage         = "/start"
-	CreateWorkoutMessage = "🏋️ Создать тренировку"
-	MyWorkoutsMessage    = "📊 Мои тренировки"
-	ExercisesMessage     = "💪 Упражнения"
-	SettingsMessage      = "⚙️ Настройки"
+	StartMessage    = "/start"
+	SettingsMessage = "⚙️ Настройки"
 )
 
 func CreateMainMenu() tgbotapi.ReplyKeyboardMarkup {
 	keyboard := tgbotapi.NewReplyKeyboard(
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(CreateWorkoutMessage),
-		),
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(MyWorkoutsMessage),
-			tgbotapi.NewKeyboardButton(ExercisesMessage),
-		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(SettingsMessage),
 		),

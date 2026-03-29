@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"workouts_bot/src/logger"
 	"workouts_bot/src/bot/handlers"
 	"workouts_bot/src/bot/handlers/callbacks"
 	"workouts_bot/src/bot/handlers/messages"
 	"workouts_bot/src/bot/keyboards"
 	"workouts_bot/src/config"
+	"workouts_bot/src/logger"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
@@ -36,46 +36,16 @@ func New(botToken string, database *gorm.DB, webhookCfg *config.WebhookConfig) (
 		keyboards.StartMessage: messages.NewStartHandler(
 			bot, database,
 		),
-		keyboards.CreateWorkoutMessage: messages.NewCreateWorkoutHandler(
-			bot, database,
-		),
-		keyboards.MyWorkoutsMessage: messages.NewMyWorkoutsHandler(
-			bot, database,
-		),
-		keyboards.ExercisesMessage: messages.NewExercisesHandler(
-			bot, database,
-		),
 		keyboards.SettingsMessage: messages.NewSettingsHandler(
 			bot, database,
 		),
 	}
 
 	callbackHandlers := map[string]handlers.Handler{
-		callbacks.WorkoutCallbackType: callbacks.NewWorkoutHandler(
-			bot, database,
-		),
-		callbacks.ExerciseCallbackType: callbacks.NewExerciseHandler(
-			bot, database,
-		),
-		callbacks.SetCallbackType: callbacks.NewSetHandler(
-			bot, database,
-		),
-		callbacks.GoalCallbackType: callbacks.NewGoalHandler(
-			bot, database,
-		),
-		callbacks.EquipmentCallbackType: callbacks.NewEquipmentHandler(
-			bot, database,
-		),
-		callbacks.ExperienceCallbackType: callbacks.NewExperienceHandler(
-			bot, database,
-		),
 		callbacks.SettingsCallbackType: callbacks.NewSettingsHandler(
 			bot, database,
 		),
-		callbacks.WorkoutTypeCallbackType: callbacks.NewWorkoutTypeHandler(
-			bot, database,
-		),
-		callbacks.DurationCallbackType: callbacks.NewDurationHandler(
+		callbacks.ExperienceCallbackType: callbacks.NewExperienceHandler(
 			bot, database,
 		),
 	}
@@ -88,14 +58,14 @@ func New(botToken string, database *gorm.DB, webhookCfg *config.WebhookConfig) (
 	}, nil
 }
 
-func (bot *Bot) Start(botContext context.Context, db *gorm.DB) error {
+func (bot *Bot) Start(botContext context.Context) error {
 	if bot.webhookConfig != nil && bot.webhookConfig.Enabled {
-		return bot.startWebhook(botContext, db)
+		return bot.startWebhook(botContext)
 	}
-	return bot.startPolling(botContext, db)
+	return bot.startPolling(botContext)
 }
 
-func (bot *Bot) startPolling(botContext context.Context, db *gorm.DB) error {
+func (bot *Bot) startPolling(botContext context.Context) error {
 	logger.Info("Starting bot in long polling mode...")
 
 	_, _ = bot.api.Request(tgbotapi.DeleteWebhookConfig{})
@@ -115,7 +85,7 @@ func (bot *Bot) startPolling(botContext context.Context, db *gorm.DB) error {
 	}
 }
 
-func (bot *Bot) startWebhook(botContext context.Context, db *gorm.DB) error {
+func (bot *Bot) startWebhook(botContext context.Context) error {
 	logger.WithFields(logrus.Fields{
 		"url":  bot.webhookConfig.URL + bot.webhookConfig.Path,
 		"port": bot.webhookConfig.Port,

@@ -1,12 +1,11 @@
 package messages
 
 import (
-	"time"
-	"workouts_bot/src/logger"
 	"workouts_bot/src/bot/handlers"
 	"workouts_bot/src/bot/keyboards"
+	"workouts_bot/src/database"
+	"workouts_bot/src/logger"
 	"workouts_bot/src/models"
-	"workouts_bot/src/services"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
@@ -28,8 +27,8 @@ const (
 )
 
 type StartHandler struct {
-	bot         *tgbotapi.BotAPI
-	userService *services.UserService
+	bot      *tgbotapi.BotAPI
+	database *gorm.DB
 }
 
 func NewStartHandler(
@@ -37,8 +36,8 @@ func NewStartHandler(
 	database *gorm.DB,
 ) *StartHandler {
 	return &StartHandler{
-		bot:         bot,
-		userService: services.NewUserService(database),
+		bot:      bot,
+		database: database,
 	}
 }
 
@@ -56,21 +55,13 @@ func (startHandler *StartHandler) Handle(
 		"first_name": firstName,
 	}).Info("New user started bot")
 
-	user, err := startHandler.userService.GetByTelegramID(userID)
-	if err != nil {
-		logger.Info("User not found, creating new user:", chatID)
-		user = &models.User{
-			TelegramID: userID,
-			Username:   userName,
-			FirstName:  firstName,
-			Goals:      models.GoalsSlice{models.GoalMuscleGain},
-			Experience: 1,
-			CreatedAt:  time.Now(),
-			UpdatedAt:  time.Now(),
-		}
+	user := &models.User{
+		TelegramID: userID,
+		Username:   userName,
+		FirstName:  firstName,
 	}
 
-	if err := startHandler.userService.CreateOrUpdate(user); err != nil {
+	if err := database.UpsertUser(user, startHandler.database); err != nil {
 		logger.Error("Failed to create or update user:", err)
 		handlers.SendErrorMessage(
 			startHandler.bot, chatID,
@@ -82,6 +73,33 @@ func (startHandler *StartHandler) Handle(
 	msg := tgbotapi.NewMessage(chatID, helloMessage)
 	msg.ReplyMarkup = keyboards.CreateMainMenu()
 
-	_, err = startHandler.bot.Send(msg)
-	return err
+	_, err := startHandler.bot.Send(msg)
+	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"chat_id": chatID,
+			"user_id": userID,
+			"error":   err,
+		}).Error("Failed to send start message")
+		return err
+	}
+	return nil
+}
+
+func (startHandler *StartHandler) MainMenu(
+	userID int64,
+	chatID int64,
+	messageID int,
+) error {
+	msg := tgbotapi.NewMessage(chatID, "Главное меню")
+	msg.ReplyMarkup = keyboards.CreateMainMenu()
+	_, err := startHandler.bot.Send(msg)
+	if err != nil {
+		logger.WithFields(logrus.Fields{
+			"chat_id": chatID,
+			"user_id": userID,
+			"error":   err,
+		}).Error("Failed to send main menu")
+		return err
+	}
+	return nil
 }

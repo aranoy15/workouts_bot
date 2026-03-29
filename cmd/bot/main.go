@@ -53,7 +53,7 @@ func main() {
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		if err := app.Bot.Start(botContext, app.DB); err != nil {
+		if err := app.Bot.Start(botContext); err != nil {
 			logger.Error("Bot error:", err)
 			cancel()
 		}
