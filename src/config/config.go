@@ -45,6 +45,7 @@ type S3Config struct {
 
 type Config struct {
 	BotToken string
+	Port     int
 	Logger   LoggerConfig
 	Database DatabaseConfig
 	Webhook  WebhookConfig
@@ -54,6 +55,7 @@ type Config struct {
 func Load() (*Config, error) {
 	config := &Config{
 		BotToken: getEnv("BOT_TOKEN", ""),
+		Port:     getEnvInt("PORT", 8080),
 		Logger: LoggerConfig{
 			Level:      getEnv("LOG_LEVEL", "info"),
 			FilePath:   getEnv("LOG_FILE_PATH", ""),
